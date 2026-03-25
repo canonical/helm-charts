@@ -2,6 +2,11 @@
 
 Welcome to the `canonical/helm-charts` repository! This project is a community-driven initiative to serve a collection of [Helm charts](https://helm.sh/) for [Ubuntu rocks](https://ubuntu.com/containers/docs).
 
+> [!NOTE]
+> Some of the chart in these repo have been inherited from the upstream
+> https://github.com/bitnami/charts project. Such charts shall inherit their
+> original license and copyrights.
+
 ## Get started
 
 Set your local dev environment by:
