@@ -1,0 +1,6 @@
+dependencies:
+- name: common
+  repository: oci://ghcr.io/canonical/helm-charts
+  version: 0.0.1
+digest: sha256:9b94fb845e81f4f099d6223f7fbe8b63a1d242e4bdbff8aa2867e91fc16b87cd
+generated: "2026-03-25T08:32:36.277530849+01:00"

@@ -1,0 +1,41 @@
+# Copyright Broadcom, Inc. All Rights Reserved.
+# SPDX-License-Identifier: APACHE-2.0
+#
+# Modifications Copyright 2026 Canonical Ltd.
+
+# These annotations may be needed only for Tanzu and Artifact Hub,
+# none of which are currently supported by this repository, so let's comment them out for now.
+# annotations:
+#   images: |
+#     - name: busybox
+#       image: ghcr.io/canonical/busybox-rock/busybox:1.37-devel_edge
+#     - name: rabbitmq
+#       image: docker.io/ubuntu/rabbitmq:3.12-24.04_edge
+#   licenses: Apache-2.0
+#   tanzuCategory: service
+
+# Keywords may also only be needed for 
+keywords:
+  - rabbitmq
+  - message queue
+  - AMQP
+
+apiVersion: v2
+name: rabbitmq
+version: 0.0.1
+appVersion: '3.12'
+description:
+  RabbitMQ is a reliable and mature messaging and streaming broker, 
+  which is easy to deploy on cloud environments, on-premises, and on your local machine.
+  It is currently used by millions worldwide.
+dependencies:
+  - name: common
+    repository: oci://ghcr.io/canonical/helm-charts
+    version: 0.x.x
+home: https://ubuntu.com/containers/docs
+maintainers:
+  - name: Canonical Ltd. All Rights Reserved.
+    url: https://github.com/canonical/helm-charts
+sources:
+  - https://github.com/canonical/helm-charts/tree/main/charts/rabbitmq
+  - https://github.com/canonical/rabbitmq-rock
