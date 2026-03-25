@@ -1,0 +1,12 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: local
+    hooks:
+    -   id: helm-lint
+        name: Helm lint
+        description: Run helm lint on all charts
+        entry: bash -c 'for chart in charts/*/; do echo $chart;helm lint "$chart" || exit 1; done'
+        language: system
+        pass_filenames: false
+        always_run: true
