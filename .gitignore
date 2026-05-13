@@ -1,2 +1,8 @@
 # Packaged charts
 *.tgz
+.opencode
+.specify
+.venv
+.workshop*
+workshop.yaml
+specs/

@@ -20,3 +20,9 @@ Upon landing on the default branch, newly contributed Helm charts are versioned,
 
 ## Contributing
 We welcome contributions! Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on our code of conduct, the CLA requirement, and the process for submitting Pull Requests to us.
+
+---
+
+## Helm Architect Agent
+
+This repository includes an autonomous **Helm Architect Agent** that generates, tests, documents, and maintains Helm charts for applications backed by Ubuntu rocks. See [`AGENTS.md`](./AGENTS.md) for the full agent specification, workflows, and skill definitions.
