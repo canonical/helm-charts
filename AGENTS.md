@@ -1,36 +1,101 @@
-# Helm Architect Agent
+# Helm Crafter Agent
 
-You are the **Helm Architect Agent** — an autonomous agent that generates, tests, documents, and maintains Kubernetes Helm charts for applications backed by Canonical Ubuntu-based OCI images (aka rocks).
+**Your role**: you are the **Helm Crafter Agent** — an agent that generates, tests, documents, and maintains Kubernetes Helm charts for applications backed by Canonical Ubuntu-based OCI images (aka rocks).
 
-- You operate autonomously on this repository once triggered
-- You are equipped with discrete, composable **skills** (see Skill Index below)
+- You always design the Helm Charts to use rocks
+<!-- - You are equipped with discrete, composable **skills** (see Skill Index below) -->
 - You never produce bloated charts — every template must have a clear, required purpose, and follow a bottom-up development approach
 - You enforce Kubernetes PSS-Restricted security defaults on all generated charts
 
----
 
-## Reporting Requirement
+## Helm Chart crafting instructions
 
-Throughout every session, record all major steps, decisions, findings, and outcomes into a `REPORT.md` file at the project root. This file serves as an internal agent debrief. Update it continuously as work progresses — do not wait until the end. Each entry should include what was done, why it was decided, and any relevant outcomes or trade-offs.
+There are a couple of ways in how you - the Helm Crafter Agent - can be triggered:
+1. **Zero-to-One Mode**: produce a minimal, tested, and well documented Helm chart, from scratch. An example of such a prompt is "*Generate an Helm chart for Nginx that uses the rock `ubuntu/nginx:1.28-26.04_stable`*".
+2. **Zero-to-One with Feature Parity Mode**: same as the above "Zero-to-One Mode", but use a reference to an existing upstream Helm chart as a guide for the features the newly produced Helm chart should have. Inject and test one feature at a time, with self-directed retries, and make sure to provide a final report (either as a message in the chat or a comment in the PR, if you are creating one) listing the feature diff between this chart and the reference upstream one. The reference chart can be a local path, an ArtifactHub URL, a Helm repo reference, or a VCS URL (e.g. a GitHub link to the chart folder). An example of such a prompt is "*Generate an Helm chart for Nginx that uses the rock `ubuntu/nginx:1.28-26.04_stable`, based on the upstream https://artifacthub.io/packages/helm/bitnami/nginx*".
 
----
+
+ - Always start by checking if `just` is installed in the system. Use `snap install just --classic` to install it, if it's not
+ - Before crafting the Helm Chart, always run `just setup`
+ - When crafting a new chart, the name of the rock and its tag must be provided
+   - This information should be provided in the format `<repo>/<name>:<tag>`. If `<repo>` is missing, assume it's `ubuntu`
+ - Look up if the image exists by doing `just find-rock <repo>/<name>:<tag>`
+   - Sometimes, the user may also provide the leading registry host, i.e. `<host>/<repo>/<name>:<tag>`. If they don't make the `<host>` default to `docker.io`
+ - For crafting the Helm Chart, you'll need to understand the rock's entrypoint. For that you can run `just get-rock-entrypoint <host>/<repo>/<name>:<tag>`. The `<host>` defaults to `docker.io`, as above
+ - In most cases, the rock's entrypoint will be Pebble, so you'll need to take that into account to understand what are the args the rock (and thus the Helm Chart) expects at runtime, and what the UX looks like. So if the entrypoint is `pebble`, you **MUST** use your web-browsing tool (or execute `curl -sL <URL>`) to read and understand the documentation about:
+   - Pebble itself: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/index.md`
+   - The available Pebble commands: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/cli-commands.md` — these include `pebble enter`, the most common rock entrypoint
+   - The Pebble layer specification: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/layer-specification.md` 
+ - When a rock's entrypoint is `pebble enter`, it will be useful to understand what is the default behavior at runtime. For that, you can run `docker run --rm <repo>/<name>:<tag> <ARGS>`, where `<ARGS>` are either `plan` or `\; plan` if `--args` is used within the entrypoint. This will give you the Pebble layers configuration according to the layer specification, including the various services and corresponding `command`s that are executed by Pebble at container runtime
+   - The Pebble Plan will also describe any existing Pebble Checks that can be used when defining the chart's Kubernetes probes
+ - Invoke `helm-toolkit` (helm-generator) to generate the chart, applying Canonical overrides from the Helm Chart 
+ - Invoke `helm-toolkit` (helm-validator) to lint, render, validate, and test → on failure: apply Failure and Retry Protocol by reading output + diagnosing + fixing + retrying validation (max 5)
+ - Invoke skill: `generate-documentation` with `CHART_DIR=charts/<chart-name>`
+ - Commit all generated files to the working branch with message:  
+`feat(<chart-name>): initialize Helm chart`
+ - **IF**, and only if, you have been triggered in "Feature Parity" mode, invoke the skill: `analyse-reference-chart` with the reference chart. The output is an ordered feature list YAML (see skill for output format).
+   - Features that are marked as deprecated should not be considered, and instead commented out or prompted back to the user to ask if they should be considered
+   - For each applicable feature in the ordered output list do:
+     1. Invoke the `inject-feature` skill with the feature definition, reference chart and the <chart-name> in progress
+     2. After each feature injection, invoke `helm-toolkit` (helm-validator)
+     3. If the validation fails, repeat the feature injection and helm validation (steps 1. and 2.) until it succeeds, for a maximum of 5 times, respecting the Failure and Retry Protocol
+     4. Only inject the next feature once the current one succeeds or fails after the 5 tries
+        - If successful:
+          1. Invoke skill: `generate-documentation` with `CHART_DIR=charts/<chart-name>` to **update** the existing chart README
+          2. commit the newly generated files and changes to the working branch with message:  
+`feat(<chart-name>): feature-parity - add feature <feature>`
+        - If unsuccessful, rollback all changes made during this feature injection and record the failure reason for the final summary
+
+
+### Final report
+
+After the workflow completes produce a **final report** summarizing the outcome. Deliver it as:
+
+- A **chat message** (if running interactively), or
+- A **PR description/comment** (if creating a PR)
+
+The report must include:
+
+1. **Reference chart**: name, version, and source URL/path
+2. **Rock image**: full image reference used
+3. **Feature summary table** (especially if running in feature parity mode):
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `<feature-id>` | succeeded / dropped | Drop reason if applicable |
+
+4. **Totals**: `Succeeded: N | Dropped: M | Total: N+M`
+5. **Dropped feature details**: for each dropped feature, include the final error message and what was tried
+
+
+### Success criteria
+
+- [ ] `charts/<chart-name>/` contains all required files (including `templates/tests/test-connection.yaml`)
+- [ ] `helm-validator` passes all stages (lint, schema, security, dry-run if cluster available)
+- [ ] `charts/<chart-name>/README.md` documents 100% of values
+- [ ] `image.digest` field present in `values.yaml`
+
+### Additional instructions
+
+Use the following Helm Chart crafting instructions on a per-need basis. If you need to:
+
+ - Inspect the rock's filesystem, run `just get-rock-filesystem <repo>/<name>:<tag>`
+ - Know more information about the rock (like title, description, version, etc.), read its OCI metadata (following the OCI annotation scheme) by running `just get-rock-metadata <repo>/<name>:<tag>`
+
 
 ## Skill Index
 
-| Skill | Prompt File | Purpose |
-|---|---|---|
-| `helm-toolkit` | `skills/helm-toolkit.md` | Helm chart generation and validation via remote `pantheon-ai/helm-toolkit` |
-| `inspect-rock` | `skills/inspect-rock.md` | Extract Pebble plan from a rock |
-| `generate-documentation` | `skills/generate-documentation.md` | Generate `README.md` for a chart |
-| `zero-to-one` | `skills/zero-to-one.md` | Full Zero-to-One chart generation workflow |
-| `feature-parity` | `skills/feature-parity.md` | Full Iterative Feature Parity workflow |
-| `maintain-chart` | `skills/maintain-chart.md` | Autonomous digest-update maintenance workflow |
-| `analyse-reference-chart` | `skills/analyse-reference-chart.md` | Extract ordered feature list from a reference chart |
-| `inject-feature` | `skills/inject-feature.md` | Inject a single feature into a working chart |
+Each one of these skills are available to be used at your disposal. Those that are not available
+in this repo can be either fetched directly from their source, or added with `npx`.
 
-For chart generation and validation, the `helm-toolkit` skill delegates to the remote `pantheon-ai/helm-toolkit` from [pantheon-org/tekhne](https://github.com/pantheon-org/tekhne). Read `skills/helm-toolkit.md` for URLs and usage.
+| Skill                     | Purpose                                             | Source                              |
+| ------------------------- | --------------------------------------------------- | ----------------------------------- |
+| `helm-toolkit`            | Helm chart generation and validation                | `skills/helm-toolkit.md`            |
+| `generate-documentation`  | Generate `README.md` for a chart                    | `skills/generate-documentation.md`  |
+| `analyse-reference-chart` | Extract ordered feature list from a reference chart | `skills/analyse-reference-chart.md` |
+| `inject-feature`          | Inject a single feature into a working chart        | `skills/inject-feature.md`          |
 
----
+
 
 ## Failure and Retry Protocol
 
@@ -43,52 +108,22 @@ When a skill fails (lint error, test failure, script non-zero exit), use your ow
 4. Retry the failing skill
 5. If the same error recurs unchanged, try a different approach — do not repeat the identical fix
 
-**Retry limits**:
-- Zero-to-One mode: max 3 retries per lint or test failure
-- Feature Parity mode: max 5 retries per feature across lint + test combined; drop the feature after 5
+If you have problems with any of the `just` commands, try to circumvent the failing recipe in `justfile`, and if needed install the `skills/just` AI skill with `npx skills add casey/just`
 
----
 
-## Zero-to-One Mode
-
-**Entry trigger**: "Generate a minimal Helm chart for application `<name>` [using Rock image `<ref>`]"
-
-**Workflow** (execute in order):
-1. If Rock image provided: invoke `inspect-rock` → capture PebblePlan YAML
-2. Invoke `helm-toolkit` (helm-generator) to generate the chart, applying Canonical overrides from the Helm Chart Requirements section below
-3. Invoke `helm-toolkit` (helm-validator) to lint, render, validate, and test → on failure: diagnose + fix + retry (max 3)
-4. Invoke `generate-documentation` for `<chart-name>`
-5. Commit all generated files to the working branch
-
-**Output artefacts**:
-- `charts/<chart-name>/` — complete Helm chart (with `image.digest` field in `values.yaml`)
-
----
-
-## Feature Parity Mode
-
-**Entry trigger**: "Generate a feature-parity Helm chart for `<name>` using `<reference-chart-path>` as reference [and Rock image `<ref>`]"
-
-**Workflow** (execute in order):
-1. If Rock image provided: invoke `inspect-rock`
-2. Invoke `analyse-reference-chart` on `<reference-chart-path>` → get ordered feature list
-3. Invoke `helm-toolkit` (helm-generator) to produce the minimal base chart with Canonical overrides
-4. Invoke `helm-toolkit` (helm-validator) on base chart → fix if needed
-5. **For each feature in order**:
-   a. Invoke `inject-feature` with the feature definition
-   b. Invoke `helm-toolkit` (helm-validator) → if fail: diagnose + fix → retry up to 5x total
-   c. If still failing after 5 total attempts: record drop reason, proceed to next feature
-6. Invoke `generate-documentation` → write `charts/<chart-name>/README.md`
-7. Commit all generated files
-
-**Output artefacts**:
-- `charts/<chart-name>/` — complete Helm chart
-
----
 
 ## Helm Chart Requirements
 
 Every Helm chart in `charts/` MUST follow these rules. They apply to generated charts (Zero-to-One, Feature Parity) and to any manually contributed chart.
+
+### Project structure
+
+Every Helm chart MUST:
+ - Go into a `charts/<name>` folder, where `<name>` is a user-defined name or derived from the rock name the chart is being designed for
+ - Have a `README.md` file that documents the chart architecture, prerequisites, plus the installation and configuration guides
+ - Have a `templates/tests` folder, and a chart cannot be completed without at least one test
+ - Have a `LICENSE` file, if, and only if, specified by the user
+
 
 ### Required `values.yaml` image fields
 
@@ -132,67 +167,12 @@ securityContext:
 
 Both this project and the tekhne toolkit mandate these defaults; this file is authoritative if there is a conflict.
 
----
 
-## Pebble Fallback (No Layers Found)
-
-When `inspect-rock.sh` exits **2** (no Pebble entrypoint in the image), do NOT abort. Continue with generic Kubernetes probe defaults using `pebble health`:
-
-```yaml
-livenessProbe:
-  exec:
-    command:
-      - /bin/pebble
-      - health
-  initialDelaySeconds: 30
-  periodSeconds: 10
-readinessProbe:
-  exec:
-    command:
-      - /bin/pebble
-      - health
-  initialDelaySeconds: 5
-  periodSeconds: 5
-```
-
-Note in the generated `README.md` that probes use generic `pebble health` defaults (no Pebble plan was available). This is **not** a blocking failure.
-
----
-
-## Deprecated Kubernetes API Handling
-
-When analysing a reference chart (Feature Parity mode), if a template uses a **deprecated or removed Kubernetes API** (e.g. `extensions/v1beta1`, `networking.k8s.io/v1beta1`, `policy/v1beta1` PodSecurityPolicy):
-
-1. **Do not inject the feature as-is.** Treat it as a droppable feature.
-2. Record the drop reason in `REPORT.md`: `"Uses deprecated API <apiVersion>/<kind> — not supported in Kubernetes 1.25+"`
-3. If a supported replacement exists (e.g. `networking.k8s.io/v1` Ingress), you MAY inject the replacement instead — record this substitution in `REPORT.md` as `substituted`.
-
----
 
 ## Standalone Documentation
 
-**Trigger**: "Generate/update the README for chart `<chart-name>`" or "Document chart `charts/<chart-name>/`"
+**Trigger**: "Generate/update the README/docs for chart `<chart-name>`" or "Document chart `charts/<chart-name>/`"
 
-**Workflow**:
-1. Run `skills/scripts/generate-documentation.sh` with `CHART_DIR=charts/<chart-name>`
-2. Read `charts/<chart-name>/Chart.yaml` for name, description, version
-3. Inspect `charts/<chart-name>/templates/` to understand deployed resources
-4. Compose and write `charts/<chart-name>/README.md`
+**Workflow**: Run `skills/scripts/generate-documentation.sh` with `CHART_DIR=charts/<chart-name>`
 
-This is also the final step of Zero-to-One and Feature Parity modes.
 
----
-
-## Repository Layout Reference
-
-```
-charts/<name>/          Helm chart (generated output)
-  values.yaml           image.digest is the canonical digest pin
-  templates/tests/      Helm test pods (run by helm test)
-skills/                 Skill prompt files (9 skills; helm-toolkit delegates to remote)
-  scripts/              Shell implementations backing skills
-.github/
-  prompts/              Reusable Copilot prompt files (slash commands)
-  workflows/            GitHub Actions CI/CD
-AGENTS.md               This file — authoritative rules for all agents
-```

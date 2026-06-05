@@ -34,7 +34,7 @@
 ## Installation
 
 \```bash
-helm install <chart-name> charts/<chart-name>/
+helm install my-<chart-name> charts/<chart-name>/
 \```
 
 ## Configuration
@@ -46,7 +46,7 @@ helm install <chart-name> charts/<chart-name>/
 ## Upgrading
 
 \```bash
-helm upgrade <chart-name> charts/<chart-name>/
+helm upgrade my-<chart-name> charts/<chart-name>/
 \```
 ```
 
@@ -55,7 +55,7 @@ helm upgrade <chart-name> charts/<chart-name>/
 **Every value MUST have a non-empty description.** If the script marks a value as `(inferred)`:
 - Generate a description from the value name and type context
 - Example: `image.repository` → "Container image repository"
-- Example: `runAsUser` → "UID to run the container as (derived from Pebble service user)"
+- Example: `runAsUser` → "UID to run the container as (derived from the rock's OCI user)"
 - Example: `livenessProbe.httpGet.path` → "HTTP path for the liveness health check"
 
 No value may be left with an empty or `(inferred)` description in the final README.

@@ -6,3 +6,4 @@
 .workshop*
 workshop.yaml
 specs/
+charts/**/charts/

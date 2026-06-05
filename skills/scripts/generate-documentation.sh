@@ -10,21 +10,20 @@ CHART_DIR="${CHART_DIR:?CHART_DIR must be set}"
 VALUES_FILE="$CHART_DIR/values.yaml"
 
 if [ ! -f "$VALUES_FILE" ]; then
-  echo "ERROR: values.yaml not found at $VALUES_FILE" >&2
-  exit 1
+	echo "ERROR: values.yaml not found at $VALUES_FILE" >&2
+	exit 1
 fi
 
-# Check for yq
-if ! command -v yq >/dev/null 2>&1; then
-  echo "ERROR: yq is required. Install: snap install yq" >&2
-  exit 1
+if ! command -v python3 >/dev/null 2>&1; then
+	echo "ERROR: python3 is required but not found" >&2
+	exit 1
 fi
 
 echo "| Key | Type | Default | Description |"
 echo "|-----|------|---------|-------------|"
 
 # Use python3 to parse YAML and extract flat key/value/comment triples
-python3 << 'PYEOF'
+python3 <<'PYEOF'
 import yaml, sys, os, re
 
 values_file = os.path.join(os.environ['CHART_DIR'], 'values.yaml')
@@ -40,7 +39,7 @@ current_path = []
 indent_stack = []
 
 for line in raw_lines:
-    stripped = stripped_line = line.rstrip('\n')
+    stripped = line.rstrip('\n')
     indent = len(line) - len(line.lstrip())
 
     # Check for inline comment
