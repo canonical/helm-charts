@@ -23,7 +23,7 @@ echo "| Key | Type | Default | Description |"
 echo "|-----|------|---------|-------------|"
 
 # Use python3 to parse YAML and extract flat key/value/comment triples
-python3 <<'PYEOF'
+uv run python3 <<'PYEOF'
 import yaml, sys, os, re
 
 values_file = os.path.join(os.environ['CHART_DIR'], 'values.yaml')

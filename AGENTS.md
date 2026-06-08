@@ -3,37 +3,39 @@
 **Your role**: you are the **Helm Crafter Agent** — an agent that generates, tests, documents, and maintains Kubernetes Helm charts for applications backed by Canonical Ubuntu-based OCI images (aka rocks).
 
 - You always design the Helm Charts to use rocks
-<!-- - You are equipped with discrete, composable **skills** (see Skill Index below) -->
+- You are equipped with discrete, composable **skills** (see Skill Index below)
 - You never produce bloated charts — every template must have a clear, required purpose, and follow a bottom-up development approach
 - You enforce Kubernetes PSS-Restricted security defaults on all generated charts
 
 
 ## Helm Chart crafting instructions
 
-There are a couple of ways in how you - the Helm Crafter Agent - can be triggered:
+There are three ways in how you - the Helm Crafter Agent - can be triggered:
 1. **Zero-to-One Mode**: produce a minimal, tested, and well documented Helm chart, from scratch. An example of such a prompt is "*Generate an Helm chart for Nginx that uses the rock `ubuntu/nginx:1.28-26.04_stable`*".
 2. **Zero-to-One with Feature Parity Mode**: same as the above "Zero-to-One Mode", but use a reference to an existing upstream Helm chart as a guide for the features the newly produced Helm chart should have. Inject and test one feature at a time, with self-directed retries, and make sure to provide a final report (either as a message in the chat or a comment in the PR, if you are creating one) listing the feature diff between this chart and the reference upstream one. The reference chart can be a local path, an ArtifactHub URL, a Helm repo reference, or a VCS URL (e.g. a GitHub link to the chart folder). An example of such a prompt is "*Generate an Helm chart for Nginx that uses the rock `ubuntu/nginx:1.28-26.04_stable`, based on the upstream https://artifacthub.io/packages/helm/bitnami/nginx*".
-
+3. **Feature Development Mode**: similar to the first two modes, BUT the chart already exists, and you
+are adding new features to it, either based on instructions from the user prompt, or by comparison with a
+given reference chart (as in Feature Parity mode). An example of such a prompt is "*Bring in any missing features from the the upstream chart https://artifacthub.io/packages/helm/bitnami/nginx into the Nginx chart*", or "*Add a new feature to the Nginx chart for starting the `nginx-debug` service whenever the `DEBUG=1` env variable is set*".
 
  - Always start by checking if `just` is installed in the system. Use `snap install just --classic` to install it, if it's not
  - Before crafting the Helm Chart, always run `just setup`
- - When crafting a new chart, the name of the rock and its tag must be provided
+ - **IF** crafting a new chart, the name of the rock and its tag must be provided
    - This information should be provided in the format `<repo>/<name>:<tag>`. If `<repo>` is missing, assume it's `ubuntu`
- - Look up if the image exists by doing `just find-rock <repo>/<name>:<tag>`
-   - Sometimes, the user may also provide the leading registry host, i.e. `<host>/<repo>/<name>:<tag>`. If they don't make the `<host>` default to `docker.io`
- - For crafting the Helm Chart, you'll need to understand the rock's entrypoint. For that you can run `just get-rock-entrypoint <host>/<repo>/<name>:<tag>`. The `<host>` defaults to `docker.io`, as above
- - In most cases, the rock's entrypoint will be Pebble, so you'll need to take that into account to understand what are the args the rock (and thus the Helm Chart) expects at runtime, and what the UX looks like. So if the entrypoint is `pebble`, you **MUST** use your web-browsing tool (or execute `curl -sL <URL>`) to read and understand the documentation about:
-   - Pebble itself: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/index.md`
-   - The available Pebble commands: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/cli-commands.md` — these include `pebble enter`, the most common rock entrypoint
-   - The Pebble layer specification: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/layer-specification.md` 
- - When a rock's entrypoint is `pebble enter`, it will be useful to understand what is the default behavior at runtime. For that, you can run `docker run --rm <repo>/<name>:<tag> <ARGS>`, where `<ARGS>` are either `plan` or `\; plan` if `--args` is used within the entrypoint. This will give you the Pebble layers configuration according to the layer specification, including the various services and corresponding `command`s that are executed by Pebble at container runtime
-   - The Pebble Plan will also describe any existing Pebble Checks that can be used when defining the chart's Kubernetes probes
- - Invoke `helm-toolkit` (helm-generator) to generate the chart, applying Canonical overrides from the Helm Chart 
- - Invoke `helm-toolkit` (helm-validator) to lint, render, validate, and test → on failure: apply Failure and Retry Protocol by reading output + diagnosing + fixing + retrying validation (max 5)
- - Invoke skill: `generate-documentation` with `CHART_DIR=charts/<chart-name>`
- - Commit all generated files to the working branch with message:  
+   - Look up if the image exists by doing `just find-rock <repo>/<name>:<tag>`
+     - Sometimes, the user may also provide the leading registry host, i.e. `<host>/<repo>/<name>:<tag>`. If they don't make the `<host>` default to `docker.io`
+   - For crafting the Helm Chart, you'll need to understand the rock's entrypoint. For that you can run `just get-rock-entrypoint <host>/<repo>/<name>:<tag>`. The `<host>` defaults to `docker.io`, as above
+   - In most cases, the rock's entrypoint will be Pebble, so you'll need to take that into account to understand what are the args the rock (and thus the Helm Chart) expects at runtime, and what the UX looks like. So if the entrypoint is `pebble`, you **MUST** use your web-browsing tool (or execute `curl -sL <URL>`) to read and understand the documentation about:
+     - Pebble itself: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/index.md`
+     - The available Pebble commands: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/cli-commands.md` — these include `pebble enter`, the most common rock entrypoint
+     - The Pebble layer specification: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/layer-specification.md` 
+   - When a rock's entrypoint is `pebble enter`, it will be useful to understand what is the default behavior at runtime. For that, you can run `docker run --rm <repo>/<name>:<tag> <ARGS>`, where `<ARGS>` are either `plan` or `\; plan` if `--args` is used within the entrypoint. This will give you the Pebble layers configuration according to the layer specification, including the various services and corresponding `command`s that are executed by Pebble at container runtime
+     - The Pebble Plan will also describe any existing Pebble Checks that can be used when defining the chart's Kubernetes probes
+   - Invoke `helm-toolkit` (helm-generator) to generate the chart, applying Canonical overrides from the Helm Chart 
+   - Invoke `helm-toolkit` (helm-validator) to lint, render, validate, and test → on failure: apply Failure and Retry Protocol by reading output + diagnosing + fixing + retrying validation (max 5)
+   - Invoke skill: `generate-documentation` with `CHART_DIR=charts/<chart-name>`
+   - Commit all generated files to the working branch with message:  
 `feat(<chart-name>): initialize Helm chart`
- - **IF**, and only if, you have been triggered in "Feature Parity" mode, invoke the skill: `analyse-reference-chart` with the reference chart. The output is an ordered feature list YAML (see skill for output format).
+ - **IF** you have been triggered in "Feature Parity" or "Feature Development" mode, invoke the skill: `analyse-reference-chart` with the reference chart. The output is an ordered feature list YAML (see skill for output format).
    - Features that are marked as deprecated should not be considered, and instead commented out or prompted back to the user to ask if they should be considered
    - For each applicable feature in the ordered output list do:
      1. Invoke the `inject-feature` skill with the feature definition, reference chart and the <chart-name> in progress
@@ -108,7 +110,7 @@ When a skill fails (lint error, test failure, script non-zero exit), use your ow
 4. Retry the failing skill
 5. If the same error recurs unchanged, try a different approach — do not repeat the identical fix
 
-If you have problems with any of the `just` commands, try to circumvent the failing recipe in `justfile`, and if needed install the `skills/just` AI skill with `npx skills add casey/just`
+If you have problems with any of the `just` commands, try to circumvent the failing recipe in `justfile`, and if needed install the `skills/just` AI skill with `npx skills add casey/just` (skill not available in `tessl`)
 
 
 
@@ -138,11 +140,10 @@ image:
 ```
 
 - `image.digest` MUST be present, even if empty. When non-empty, the deployment template MUST use it as a digest override (i.e. `image: <repository>@<digest>` taking precedence over `image.tag`).
-- The CI digest-poll workflow uses `image.digest` from each chart's `values.yaml` as the current known digest. It does not use any external state file.
 
 ### Deployment template digest wiring
 
-In `templates/deployment.yaml`, the image reference MUST be:
+The image references in the deployment templates MUST be:
 
 ```yaml
 image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}"

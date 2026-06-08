@@ -79,7 +79,7 @@ For every feature, collect the full dotted paths of all `.Values.*` references f
 
 ### 4 — Detect deprecated APIs
 
-Flag any feature whose `apiVersion` is deprecated or removed in Kubernetes 1.25+ with `deprecated_api: true`. Common deprecated APIs:
+Flag any feature whose `apiVersion` is deprecated or removed in Kubernetes 1.29+ with `deprecated_api: true`. Common deprecated APIs:
 
 - `extensions/v1beta1`
 - `networking.k8s.io/v1beta1`

@@ -45,7 +45,7 @@ The tekhne toolkit produces generic best-practice charts. This project adds requ
 
 - **`image.digest` field**: Every chart must include `image.digest` in `values.yaml` (the toolkit doesn't mandate this)
 - **Deployment image reference**: Must use the `{{- if .Values.image.digest }}@{{ .Values.image.digest }}{{- end }}` pattern
-- **Pebble-wired probes**: If Pebble is the rock's OCI entrypoint, then rely on its Pebble Plan "checks" to derive the chart's Kubernetes probes. Otherwise use generic Kubernetes probe defaults that rely on using `pebble health`:
+- **Pebble-wired probes**: If Pebble is the rock's OCI entrypoint, then rely on its Pebble Plan "checks" to derive the chart's Kubernetes probes. If there are no Pebble checks defined, still use generic Kubernetes probe defaults that rely on using `pebble health`:
 
     ```yaml
     livenessProbe:
