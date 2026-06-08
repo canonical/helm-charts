@@ -19,7 +19,7 @@ given reference chart (as in Feature Parity mode). An example of such a prompt i
 
  - Always start by checking if `just` is installed in the system. Use `snap install just --classic` to install it, if it's not
  - Before crafting the Helm Chart, always run `just setup`
- - **IF** crafting a new chart, the name of the rock and its tag must be provided
+ - **IF** the chart doesn't exist yet, the name of the rock and its tag must be provided
    - This information should be provided in the format `<repo>/<name>:<tag>`. If `<repo>` is missing, assume it's `ubuntu`
    - Look up if the image exists by doing `just find-rock <repo>/<name>:<tag>`
      - Sometimes, the user may also provide the leading registry host, i.e. `<host>/<repo>/<name>:<tag>`. If they don't make the `<host>` default to `docker.io`
@@ -28,14 +28,14 @@ given reference chart (as in Feature Parity mode). An example of such a prompt i
      - Pebble itself: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/index.md`
      - The available Pebble commands: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/cli-commands.md` — these include `pebble enter`, the most common rock entrypoint
      - The Pebble layer specification: `https://raw.githubusercontent.com/canonical/pebble/refs/heads/master/docs/reference/layer-specification.md` 
-   - When a rock's entrypoint is `pebble enter`, it will be useful to understand what is the default behavior at runtime. For that, you can run `docker run --rm <repo>/<name>:<tag> <ARGS>`, where `<ARGS>` are either `plan` or `\; plan` if `--args` is used within the entrypoint. This will give you the Pebble layers configuration according to the layer specification, including the various services and corresponding `command`s that are executed by Pebble at container runtime
+   - When a rock's entrypoint is `pebble enter`, it will be useful to understand what is the default behavior at runtime. For that, you can run `docker run --rm <repo>/<name>:<tag> <ARGS>`, where `<ARGS>` are either `plan`, or `\; plan` if `--args` is used within the rock's OCI entrypoint. This will give you the Pebble layers configuration according to the layer specification, including the various services and corresponding `command`s that are executed by Pebble at container runtime
      - The Pebble Plan will also describe any existing Pebble Checks that can be used when defining the chart's Kubernetes probes
    - Invoke `helm-toolkit` (helm-generator) to generate the chart, applying Canonical overrides from the Helm Chart 
    - Invoke `helm-toolkit` (helm-validator) to lint, render, validate, and test → on failure: apply Failure and Retry Protocol by reading output + diagnosing + fixing + retrying validation (max 5)
    - Invoke skill: `generate-documentation` with `CHART_DIR=charts/<chart-name>`
    - Commit all generated files to the working branch with message:  
 `feat(<chart-name>): initialize Helm chart`
- - **IF** you have been triggered in "Feature Parity" or "Feature Development" mode, invoke the skill: `analyse-reference-chart` with the reference chart. The output is an ordered feature list YAML (see skill for output format).
+ - **IF** you have been triggered in "Feature Parity" or the chart already exists, invoke the skill: `analyse-reference-chart` with the reference chart. The output is an ordered feature list YAML (see skill for output format).
    - Features that are marked as deprecated should not be considered, and instead commented out or prompted back to the user to ask if they should be considered
    - For each applicable feature in the ordered output list do:
      1. Invoke the `inject-feature` skill with the feature definition, reference chart and the <chart-name> in progress
