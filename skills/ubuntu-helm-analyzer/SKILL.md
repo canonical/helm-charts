@@ -106,6 +106,10 @@ Assign numeric `priority` (1 = inject first):
 
 Within the same category, simpler features (fewer templates, fewer values keys) come first.
 
+### Step 6 — Validate the YAML output
+
+Use `yq` to ensure the format, sorting and existence of the feature fields, in conformity with the schema specified in the Output section below.
+
 ## Output
 
 A YAML document sorted by `priority` ascending:
