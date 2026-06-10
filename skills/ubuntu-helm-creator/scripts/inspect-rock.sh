@@ -35,7 +35,7 @@ filesystem)
 	docker run --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock:ro \
 		--entrypoint sh \
-		wagoodman/dive:v0.13.1 \
+		wagoodman/dive:v0.13.1@sha256:f1886e6c32c094fc41a623c1989f5cb3e48aa766da5f0be233f911fc1d85ce10 \
 		-c "dive --json out.json $IMAGE >/dev/null && cat out.json" |
 		jq -r '.layer[] | .fileList[]'
 	;;
