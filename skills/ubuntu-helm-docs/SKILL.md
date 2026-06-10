@@ -17,7 +17,7 @@ Generate or update `README.md` for a Helm chart in `<chart-path>/`.
 
 ## Prerequisites
 
-Run `scripts/setup.sh` to verify required tools (uv, python3 with pyyaml).
+Run `scripts/setup.sh` to verify required tools (uv). If any tools are missing, they can be installed by running `scripts/setup.sh --install`. 
 
 ## Workflow
 
@@ -90,6 +90,8 @@ helm install my-<chart-name> <chart-path>/
 helm upgrade my-<chart-name> <chart-path>/
 \```
 ```
+
+The sections above are **required**. Add extra sections between Configuration and Upgrading when the chart warrants them (e.g. TLS, Prometheus metrics, persistence, high availability). Derive these from the templates and values — if a chart has `metrics.enabled`, `tls.enabled`, or `persistence.enabled`, document each in its own section.
 
 ### Step 5 — Fill missing descriptions
 

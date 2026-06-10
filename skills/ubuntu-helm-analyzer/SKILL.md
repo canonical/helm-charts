@@ -11,6 +11,10 @@ argument-hint: '<chart-ref> (local path, ArtifactHub URL, helm repo ref, or Git 
 
 Analyze a Helm chart and extract an ordered list of discrete, injectable features as YAML output.
 
+## Prerequisites
+
+ - Make a tool check by running `scripts/setup.sh`. If any tools are missing, they can be installed by running `scripts/setup.sh --install`. 
+
 ## Input
 
 The chart reference can be any of:
@@ -86,9 +90,7 @@ Flag features with deprecated/removed `apiVersion` for Kubernetes 1.29+:
 - `policy/v1beta1` (PodSecurityPolicy)
 - `rbac.authorization.k8s.io/v1beta1`
 
-Mark these as `deprecated_api: true`.
-
-If a feature ends up being marked as `deprecated_api: false`, run an additional check to verify the chart's `Chart.yaml` and README files for any mentions of deprecated APIs in the documentation, and if found, mark as `deprecated_api: true` with a warning that the chart may be using deprecated APIs despite not declaring them in the templates. 
+Mark these as `deprecated_api: true`. For all other features, run an additional check to verify the chart's `Chart.yaml` and README files for any mentions of deprecated APIs in the documentation, and if found, mark them as `deprecated_api: true` with a warning that the chart may be using deprecated APIs despite not declaring them in the templates. 
 
 ### Step 5 — Assign priority
 

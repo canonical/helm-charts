@@ -1,13 +1,13 @@
 ---
 name: ubuntu-helm-creator
-description: Generate, validate, document, and maintain Kubernetes Helm charts backed by Canonical Ubuntu OCI images (rocks). Use when creating a new Helm chart from scratch for a rock; achieving feature parity with an upstream chart (Bitnami, ArtifactHub, GitHub); adding features to an existing chart. Trigger phrases are "generate helm chart", "create helm chart based on upstream chart", "helm chart for app", "feature parity with upstream", "add feature to chart", "scaffold chart", "ubuntu rock helm", "rock-backed chart". Produces chart scaffolding, values.yaml with image.digest, PSS-Restricted security defaults, Pebble-wired probes, tests, and README.md.
-argument-hint: '<chart-name> [<host>/]<repo>/<name>:<tag> [<reference-chart>]'
+description: Generate Kubernetes Helm charts backed by Canonical Ubuntu OCI images (rocks). Use when creating a new Helm chart from scratch for a rock; achieving feature parity with an upstream chart (Bitnami, ArtifactHub, GitHub); adding features to an existing chart. Trigger phrases are "generate helm chart", "create helm chart based on upstream chart", "helm chart for app", "feature parity with upstream", "add feature to chart", "scaffold chart", "ubuntu rock helm", "rock-backed chart". Produces chart scaffolding, values.yaml with image.digest, PSS-Restricted security defaults, Pebble-wired probes, tests, and README.md.
+argument-hint: '<chart-name> [[<host>/]<repo>/<name>:<tag>] [<reference-chart>]'
 ---
 
 
 # Ubuntu Helm Creator
 
-Generate, validate, document, and maintain Kubernetes Helm charts backed by Canonical Ubuntu OCI images (rocks).
+Generate Kubernetes Helm charts backed by Canonical Ubuntu OCI images (rocks).
 
 ## Modes
 
@@ -20,7 +20,7 @@ Generate, validate, document, and maintain Kubernetes Helm charts backed by Cano
 
 ## Prerequisites
 
- - The tekhne `helm-generator` skill (from [pantheon-org/tekhne](https://github.com/pantheon-org/tekhne)) must be installed. If missing: `npx tessl i pantheon-ai/helm-toolkit@0.1.0`
+ - The `helm-generator` skill (from https://github.com/pantheon-org/tekhne/tree/main/skills/ci-cd/helm/generator) must be installed. If missing: `npx tessl i pantheon-ai/helm-toolkit@0.1.0 --skill helm-generator`
  - Make a tool check by running `scripts/setup.sh`. If any tools are missing, they can be installed by running `scripts/setup.sh --install`. 
 
 ---
@@ -44,10 +44,10 @@ chart already exists?
 Rock image format: `[<host>/]<repo>/<name>:<tag>`
 - `<host>` defaults to `docker.io`; `<repo>` defaults to `ubuntu`
 
- - Confirm the image exists with `scripts/inspect-rock.sh find <repo>/<name>:<tag>`
- - Get the rock's OCI entrypoint with `scripts/inspect-rock.sh entrypoint <repo>/<name>:<tag>`
- - Get the rock's metadata, including the OCI annotation for its description, with `scripts/inspect-rock.sh metadata <repo>/<name>:<tag>`
- - Inspect the rock's filesystem layout with `scripts/inspect-rock.sh filesystem <repo>/<name>:<tag>`
+ - Confirm the image exists with `scripts/inspect-rock.sh inspect [<host>/]<repo>/<name>:<tag>`
+ - Get the rock's OCI entrypoint with `scripts/inspect-rock.sh entrypoint [<host>/]<repo>/<name>:<tag>`
+ - Get the rock's metadata, including the OCI annotation for its description, with `scripts/inspect-rock.sh metadata [<host>/]<repo>/<name>:<tag>`
+ - Inspect the rock's filesystem layout with `scripts/inspect-rock.sh filesystem [<host>/]<repo>/<name>:<tag>`
 
 
 #### 2. Understand the rock's runtime

@@ -14,80 +14,100 @@ if [ ! -f "$VALUES_FILE" ]; then
 	exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-	echo "ERROR: python3 is required but not found" >&2
+if ! command -v uv >/dev/null 2>&1; then
+	echo "ERROR: uv is required but not found (run scripts/setup.sh --install)" >&2
 	exit 1
 fi
 
 echo "| Key | Type | Default | Description |"
 echo "|-----|------|---------|-------------|"
 
-# Use python3 to parse YAML and extract flat key/value/comment triples
-uv run python3 <<'PYEOF'
-import yaml, sys, os, re
+# Use ruamel.yaml for correct YAML parsing; regex for comment extraction
+uv run --with ruamel.yaml python3 <<'PYEOF'
+import sys, os, re
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 values_file = os.path.join(os.environ['CHART_DIR'], 'values.yaml')
 
-# Read raw lines to capture inline comments
+# --- Pass 1: extract descriptions from structured comment annotations ---
+# Handles bitnami @param and helm-docs "# --" conventions.
+param_map = {}
 with open(values_file) as f:
     raw_lines = f.readlines()
 
-# Build a comment map: key_path -> comment
-# Simple approach: look for lines with `# description` comments
-comment_map = {}
-current_path = []
-indent_stack = []
-
+prev_helmdocs = None  # holds a "# -- desc" pending for the next key line
 for line in raw_lines:
-    stripped = line.rstrip('\n')
-    indent = len(line) - len(line.lstrip())
+    stripped = line.strip()
 
-    # Check for inline comment
-    comment = ''
-    if '#' in stripped:
-        parts = stripped.split('#', 1)
-        comment = parts[1].strip()
-        stripped = parts[0].rstrip()
+    # Bitnami: ## @param dotted.key [options] Description text
+    m = re.match(r'^##?\s*@param\s+(\S+)(?:\s+\[.*?\])?\s+(.*)', stripped)
+    if m:
+        desc = m.group(2).strip()
+        if desc:
+            param_map[m.group(1)] = desc
+        continue
 
-    if ':' in stripped and not stripped.strip().startswith('-'):
-        key = stripped.strip().split(':', 1)[0].strip()
+    # helm-docs: # -- Description (always on the line above the key)
+    m = re.match(r'^#\s*--\s+(.*)', stripped)
+    if m:
+        prev_helmdocs = m.group(1).strip()
+        continue
+
+    # If previous line was a helm-docs comment, attach to this key
+    if prev_helmdocs and ':' in stripped and not stripped.startswith('#'):
+        key = stripped.split(':', 1)[0].strip().strip('-').strip()
         if key:
-            # Manage path
-            while indent_stack and indent_stack[-1][0] >= indent:
-                indent_stack.pop()
-                if current_path:
-                    current_path.pop()
-            if key:
-                current_path.append(key)
-                indent_stack.append((indent, key))
-                full_key = '.'.join(current_path)
-                if comment:
-                    comment_map[full_key] = comment
+            param_map[key] = prev_helmdocs
+    prev_helmdocs = None
 
-# Now load YAML and flatten
+# --- Pass 2: parse YAML structure and extract inline comments ---
+yaml_parser = YAML()
 with open(values_file) as f:
-    values = yaml.safe_load(f) or {}
+    values = yaml_parser.load(f) or {}
 
-def flatten(d, prefix=''):
+
+def get_inline_comment(node, key):
+    """Get the inline comment (same line) for a key in a CommentedMap."""
+    if not isinstance(node, CommentedMap):
+        return None
+    if not hasattr(node, 'ca') or key not in node.ca.items:
+        return None
+    item_comments = node.ca.items[key]
+    # Index 2 = inline comment token
+    if len(item_comments) > 2 and item_comments[2] is not None:
+        token = item_comments[2]
+        if hasattr(token, 'value'):
+            text = token.value.strip().lstrip('#').strip()
+            if text and not text.startswith('@'):
+                return text
+    return None
+
+
+def flatten(node, prefix=''):
+    """Recursively flatten YAML into (key, value, inline_comment) tuples."""
     items = []
-    if isinstance(d, dict):
-        for k, v in d.items():
-            full = f'{prefix}.{k}' if prefix else k
+    if isinstance(node, (CommentedMap, dict)):
+        for k in node:
+            v = node[k]
+            full = f'{prefix}.{k}' if prefix else str(k)
+            comment = get_inline_comment(node, k) if isinstance(node, CommentedMap) else None
             if isinstance(v, (dict, list)):
                 items.extend(flatten(v, full))
             else:
-                items.append((full, v))
-    elif isinstance(d, list):
-        for i, v in enumerate(d):
+                items.append((full, v, comment))
+    elif isinstance(node, (CommentedSeq, list)):
+        for i, v in enumerate(node):
             full = f'{prefix}[{i}]'
             if isinstance(v, (dict, list)):
                 items.extend(flatten(v, full))
             else:
-                items.append((full, v))
+                items.append((full, v, None))
     return items
 
+
 rows = flatten(values)
-for key, val in rows:
+for key, val, inline_comment in rows:
     val_type = type(val).__name__
     if val_type == 'NoneType':
         val_type = 'string'
@@ -97,6 +117,7 @@ for key, val in rows:
     elif val_type == 'int':
         val_type = 'integer'
 
-    description = comment_map.get(key, '(inferred)')
+    # Priority: @param / helm-docs annotation > inline comment > (inferred)
+    description = param_map.get(key) or inline_comment or '(inferred)'
     print(f'| `{key}` | `{val_type}` | `{val}` | {description} |')
 PYEOF
