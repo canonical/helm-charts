@@ -23,6 +23,17 @@ We welcome contributions! Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for
 
 ---
 
-## Helm Architect Agent
+## Helm Crafter Agent
 
-This repository includes an autonomous **Helm Architect Agent** that generates, tests, documents, and maintains Helm charts for applications backed by Ubuntu rocks. See [`AGENTS.md`](./AGENTS.md) for the full agent specification, workflows, and skill definitions.
+This repository includes a **Helm Crafter Agent** — an AI-powered assistant that generates, validates, documents, and maintains Helm charts for applications backed by Ubuntu rocks.
+
+The agent is composed of four discrete skills:
+
+| Skill | Purpose |
+|-------|---------|
+| `ubuntu-helm-creator` | Generate Helm charts backed by Ubuntu rocks |
+| `ubuntu-helm-validator` | Validate charts (upstream + Canonical checks) |
+| `ubuntu-helm-docs` | Generate/update `README.md` for a chart |
+| `ubuntu-helm-analyzer` | Analyze a chart and extract ordered feature list |
+
+See [`AGENTS.md`](./AGENTS.md) for the full agent specification and workflows.
