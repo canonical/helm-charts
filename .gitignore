@@ -7,3 +7,9 @@
 workshop.yaml
 specs/
 charts/**/charts/
+tessl*
+.tessl
+.agents
+.claude
+.vscode
+.github/skills/
