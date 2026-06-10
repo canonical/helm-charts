@@ -88,6 +88,8 @@ Flag features with deprecated/removed `apiVersion` for Kubernetes 1.29+:
 
 Mark these as `deprecated_api: true`.
 
+If a feature ends up being marked as `deprecated_api: false`, run an additional check to verify the chart's `Chart.yaml` and README files for any mentions of deprecated APIs in the documentation, and if found, mark as `deprecated_api: true` with a warning that the chart may be using deprecated APIs despite not declaring them in the templates. 
+
 ### Step 5 — Assign priority
 
 Assign numeric `priority` (1 = inject first):
