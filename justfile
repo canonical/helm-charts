@@ -32,21 +32,58 @@ get-rock-metadata image:
 
 # Lint a Helm chart
 lint chart:
-	@echo "Linting $1..."
-	@helm lint $1
+	@echo "Linting Helm chart {{chart}}..."
+	helm lint charts/{{chart}}
 
-# Lint all charts
-lint-all:
-	@for chart in charts/*; do \
-		if [ -d "$chart" ]; then \
-			echo "Linting $chart..."; \
-			just lint $chart; \
-		fi; \
-	done
+# Render Helm templates and optionally validate with kubectl
+render-templates chart:
+	#!/bin/bash
+	echo "Rendering Helm templates for chart {{chart}}..."
+	if command -v kubectl &> /dev/null; then
+		helm template test-templates-{{chart}} charts/{{chart}} | kubectl apply --dry-run=client -f -
+	else
+		helm template test-templates-{{chart}} charts/{{chart}} > /dev/null
+	fi
 
-# Run tests for a Helm chart
+# Test rendered templates against OPA policies
+test-policies chart:
+	@echo "Testing policies for chart {{chart}}..."
+	helm template test-templates-{{chart}} charts/{{chart}} | \
+	docker run --rm -i -v $(git rev-parse --show-toplevel):/project \
+		openpolicyagent/conftest@sha256:5fd81e332d7e4bc01daf3ef35371800a9a9720a30c0c37a78de0c5fbe4b6d622 \
+		test - --policy /project/policy.rego
+
+# Run Helm unittest tests
+unit-test chart:
+	@echo "Running Helm unittest for chart {{chart}}..."
+	helm unittest charts/{{chart}}
+
+# Run integration tests with spread (requires Spread)
+integration-test chart:
+	@echo "Running integration tests for chart {{chart}}..."
+	spread charts/{{chart}}
+
+# Run all tests for a chart
 test chart:
 	#!/bin/bash
 	
-	# Lint 
-	just lint $1
+	ret=0
+	for action in lint render-templates test-policies unit-test integration-test
+	do
+		just $action {{chart}} || ret=$?
+	done
+
+	exit $ret
+
+# Run all tests for all charts
+test-all:
+	#!/bin/bash
+
+	ret=0
+	for chart in $(ls charts); do
+		echo "Testing chart: $chart"
+		just test $chart || ret=$?
+	done
+
+	exit $ret
+>>>>>>> 36aedcdc9e6b46dff71f95b6650938095bb433a4

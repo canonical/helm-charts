@@ -1,0 +1,13 @@
+summary: Install and run Helm tests for the RabbitMQ chart
+
+environment:
+  HELM_RELEASE: test-rabbitmq
+  HELM_REGISTRY: '$(HOST: echo "${HELM_REGISTRY:-}")'
+  HELM_REGISTRY_USERNAME: '$(HOST: echo "${HELM_REGISTRY_USERNAME:-}")'
+  HELM_REGISTRY_PASSWORD: '$(HOST: echo "${HELM_REGISTRY_PASSWORD:-}")'
+
+execute: |
+  helm-test
+
+restore: |
+  helm uninstall "$HELM_RELEASE" --wait || true
