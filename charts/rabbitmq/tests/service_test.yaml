@@ -1,0 +1,49 @@
+suite: test rabbitmq service
+templates:
+  - templates/svc.yaml
+release:
+  name: my-release
+  namespace: test-ns
+tests:
+  - it: should render a Service
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: my-release-rabbitmq
+
+  - it: should default to ClusterIP
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should honour the service type override
+    set:
+      service.type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should expose the AMQP port by default
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: amqp
+            port: 5672
+            targetPort: amqp
+          any: true
+
+  - it: should expose the metrics port when metrics are enabled
+    set:
+      metrics.enabled: true
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: metrics
+            targetPort: metrics
+          any: true

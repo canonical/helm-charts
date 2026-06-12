@@ -1,2 +1,5 @@
 # Packaged charts
 *.tgz
+
+# helm unittests
+__snapshot__
