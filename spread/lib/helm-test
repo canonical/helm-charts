@@ -1,0 +1,32 @@
+#!/bin/bash -xeu
+
+chart_path="."
+chart_release="${HELM_RELEASE:-test-release-$(date +%H%M%S)}"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --chart-path)
+      chart_path="$2"
+      shift 2
+      ;;
+    --chart-release)
+      chart_release="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [ -n "$HELM_REGISTRY_PASSWORD" ]; then
+	echo "$HELM_REGISTRY_PASSWORD" | helm registry login "$HELM_REGISTRY" -u "$HELM_REGISTRY_USERNAME" --password-stdin
+fi
+
+helm dependency update "$chart_path"
+helm install "$chart_release" "$chart_path" \
+--wait \
+--timeout 5m
+
+helm test "$chart_release" --timeout 5m --logs
