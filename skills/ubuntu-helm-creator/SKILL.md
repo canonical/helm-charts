@@ -11,10 +11,10 @@ Generate Kubernetes Helm charts backed by Canonical Ubuntu OCI images (rocks).
 
 ## Modes
 
-| Mode | Trigger | Example |
-|------|---------|---------|
-| **Zero-to-One** | New chart from a rock | "Generate a Helm chart for `ubuntu/nginx:1.28-26.04_stable`" |
-| **Feature Development** | Add features chart | "Add missing features from https://artifacthub.io/packages/helm/bitnami/nginx into the Nginx chart" or "Add env var FOO to chart Nginx" or "Create a chart for `ubuntu/nginx:1.28-26.04_stable` based on https://artifacthub.io/packages/helm/bitnami/nginx"  |
+| Mode                    | Trigger               | Example                                                                                                                                                                                                                                                      |
+| ----------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Zero-to-One**         | New chart from a rock | "Generate a Helm chart for `ubuntu/nginx:1.28-26.04_stable`"                                                                                                                                                                                                 |
+| **Feature Development** | Add features chart    | "Add missing features from https://artifacthub.io/packages/helm/bitnami/nginx into the Nginx chart" or "Add env var FOO to chart Nginx" or "Create a chart for `ubuntu/nginx:1.28-26.04_stable` based on https://artifacthub.io/packages/helm/bitnami/nginx" |
 
 ---
 
@@ -148,7 +148,34 @@ readinessProbe:
 
 **IF** requested, add a `LICENSE` file in the `<chart-path>`.
 
-#### 4. Validate
+#### 4. Add tests
+
+ - If not yet present, generate `<chart-path>/templates/tests/test-connection.yaml` with a simple test that verifies the container is running and responding to Pebble checks
+ - Add a `<chart-path>/task.yaml` file. This is a Spread task definition (see https://github.com/canonical/spread), and should look like this:
+  
+    ```yaml
+    summary: Spread tests for the <chart-name> Helm chart
+
+    environment:
+      HELM_RELEASE: test-<chart-name>
+      HELM_REGISTRY: '$(HOST: echo "${HELM_REGISTRY:-}")'
+      HELM_REGISTRY_USERNAME: '$(HOST: echo "${HELM_REGISTRY_USERNAME:-}")'
+      HELM_REGISTRY_PASSWORD: '$(HOST: echo "${HELM_REGISTRY_PASSWORD:-}")'
+
+    execute: |
+      # Common file from $PROJECT_ROOT/spread/lib/
+      helm-test
+
+      # <OPTIONAL ADDITIONAL TESTS>
+
+    restore: |
+      helm uninstall "$HELM_RELEASE" --wait || true
+    ```
+
+ - If, and ONLY IF requested by the user, add a `<chart-path>/policy.rego` file with OPA policies that are specific for the chart
+ - Add a `<chart-path>/tests/` directory with YAML test files for Helm unittest (see https://github.com/helm-unittest/helm-unittest)
+
+#### 5. Validate
 
 
 Invoke skill: [ubuntu-helm-validator](../ubuntu-helm-validator).
@@ -156,7 +183,7 @@ Invoke skill: [ubuntu-helm-validator](../ubuntu-helm-validator).
 → On failure: apply the [Failure and Retry Protocol](#failure-and-retry-protocol) (max 5 attempts).
 
 
-#### 5. Document
+#### 6. Document
 
 Invoke skill: [ubuntu-helm-docs](../ubuntu-helm-docs) with `CHART_DIR=<chart-path>`
 
@@ -190,14 +217,15 @@ For each applicable feature in order:
 4. **Update** `values.yaml` — add new keys for this feature, with defaults that keep the feature disabled by default (e.g., `ingress.enabled: false`)
 5. **Update** `values.schema.json` **ONLY** if it exists already, adding the JSON Schema entries for the new values keys
 6. **Do NOT modify** `Chart.yaml`, `_helpers.tpl` (unless adding new named template needed for this feature), or any existing template that was already passing tests
-7. **Validate** the updated chart by invoking the skill [ubuntu-helm-validator](../ubuntu-helm-validator)
-8. **On failure** apply [Failure and Retry Protocol](#failure-and-retry-protocol) (max 5 attempts per feature)
+7. **Update** the chart's tests. Add or modify `<chart-path>/templates/tests/test-connection.yaml`, `<chart-path>/task.yaml`, `<chart-path>/policy.rego`, and/or `<chart-path>/tests/` files as needed to cover the new feature
+8. **Validate** the updated chart by invoking the skill [ubuntu-helm-validator](../ubuntu-helm-validator)
+9. **On failure** apply [Failure and Retry Protocol](#failure-and-retry-protocol) (max 5 attempts per feature)
    - If still failing after 5 attempts:
      - Roll back all changes for this feature
      - Record failure reason for the final report
      - Continue to next feature
-9.  **On success**:
-   - **Update the README** of the updated chart by invoking the skill [ubuntu-helm-docs](../ubuntu-helm-docs) with `CHART_DIR=<chart-path>`
+10. **On success**:
+    - **Update the README** of the updated chart by invoking the skill [ubuntu-helm-docs](../ubuntu-helm-docs) with `CHART_DIR=<chart-path>`
 
 ---
 
@@ -213,8 +241,8 @@ Produce after any workflow completes. Deliver as a chat message (interactive) or
 
 ### Feature Summary
 
-| Feature | Status | Notes |
-|---------|--------|-------|
+| Feature        | Status              | Notes       |
+| -------------- | ------------------- | ----------- |
 | `<feature-id>` | succeeded / dropped | Drop reason |
 
 **Totals**: Succeeded: N | Dropped: M | Total: N+M
@@ -227,7 +255,7 @@ Produce after any workflow completes. Deliver as a chat message (interactive) or
 
 ## Success Criteria
 
-- [ ] `<chart-path>/` contains all required files, including `templates/tests/test-connection.yaml`
+- [ ] `<chart-path>/` contains all required files, including `templates/tests/test-connection.yaml`, `tests/` and `task.yaml`
 - [ ] `helm-validator` passes all stages (lint, schema, security, dry-run)
 - [ ] `<chart-path>/README.md` documents 100% of values
 - [ ] `image.digest` present in `values.yaml`
