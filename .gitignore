@@ -18,3 +18,4 @@ tessl*
 
 # helm unittests
 __snapshot__
+.debug
