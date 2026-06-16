@@ -1,0 +1,47 @@
+name: Request a New Helm Chart
+description: Request a new Ubuntu-based Helm chart for this repository.
+title: "[Chart Request]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill out the details below so we can evaluate the request.
+
+  - type: input
+    id: chart-name
+    attributes:
+      label: Chart name
+      description: The proposed name for the chart (e.g. `postgresql`, `redis`).
+      placeholder: my-app
+    validations:
+      required: true
+
+  - type: input
+    id: upstream-chart
+    attributes:
+      label: Upstream reference chart
+      description: Optional link to an upstream reference chart to be used for feature parity
+      placeholder: https://github.com/<org>/my-app-helm-chart/tree/main/charts/my-app
+    validations:
+      required: false
+
+  - type: input
+    id: rock-image
+    attributes:
+      label: Main rock
+      description: The rock to be used as the main chart image. It must already exist.
+      placeholder: docker.io/ubuntu/rabbitmq:4.0-26.04_stable
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Context and use case
+      description: |
+        Why is this chart needed? What problem does it solve?
+
+        Leave any additional details that are relevant for understanding
+        the use case and requirements.
+    validations:
+      required: false
