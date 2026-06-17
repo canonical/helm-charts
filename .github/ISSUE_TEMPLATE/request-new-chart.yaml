@@ -1,5 +1,5 @@
-name: Request a New Helm Chart
-description: Request a new Ubuntu-based Helm chart for this repository.
+name: ☸️ Request a New Helm Chart
+description: Request a new rock-based Helm chart for this repository.
 title: "[Chart Request]: "
 body:
   - type: markdown
