@@ -57,7 +57,21 @@ unit-test() {
 integration-test() {
 	local chart="$1"
 	echo "Running integration tests for chart ${chart}..."
-	(cd "${REPO_ROOT}" && spread ${chart})
+
+	if ! command -v spread &> /dev/null; then
+		echo "spread not installed; skipping integration tests." >&2
+		return 0
+	fi
+	if [ ! -f "${REPO_ROOT}/spread.yaml" ]; then
+		echo "spread.yaml not found at repo root; skipping integration tests." >&2
+		return 0
+	fi
+	if [ ! -f "${REPO_ROOT}/${chart}/task.yaml" ]; then
+		echo "No task.yaml found for ${chart}; skipping integration tests." >&2
+		return 0
+	fi
+
+	(cd "${REPO_ROOT}" && spread "${chart}")
 }
 
 usage() {
