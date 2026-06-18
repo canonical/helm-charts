@@ -47,10 +47,8 @@ test-policies chart:
 unit-test chart:
 	./skills/ubuntu-helm-validator/scripts/run-test.sh unit-test charts/{{chart}}
 
-# Run integration tests with spread (requires Spread)
 integration-test chart:
-	@echo "Running integration tests for chart {{chart}}..."
-	spread charts/{{chart}}
+	./skills/ubuntu-helm-validator/scripts/run-test.sh integration-test charts/{{chart}}
 
 # Run all tests for a chart
 test chart:
