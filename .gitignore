@@ -1,2 +1,21 @@
 # Packaged charts
 *.tgz
+
+# Local development and AI files
+.opencode
+.specify
+.venv
+.workshop*
+workshop.yaml
+specs/
+charts/**/charts/
+tessl*
+.tessl
+.agents
+.claude
+.vscode
+.github/skills/
+
+# helm unittests
+__snapshot__
+.debug

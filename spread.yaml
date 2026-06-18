@@ -1,0 +1,78 @@
+project: helm-charts
+
+path: /helm-charts
+
+environment:
+  PROJECT_PATH: /helm-charts
+  SHARED_LIBRARIES: $PROJECT_PATH/spread/lib
+  PATH: /snap/bin:$PATH:$SHARED_LIBRARIES
+
+exclude:
+  - .github
+
+backends:
+  lxd:
+    type: adhoc
+    allocate: |
+      set -x
+      release=noble
+      options="-c limits.cpu=2 -c limits.memory=8GiB -d root,size=32GiB"
+
+      launch_rc=0
+      echo "Allocating $SPREAD_SYSTEM..."
+      lxc launch --ephemeral ubuntu:$release $SPREAD_SYSTEM --vm $options || launch_rc=$?
+
+      if [ $launch_rc -gt 0 ]; then
+        echo "Release $release failed to launch. Trying the daily channel..."
+        lxc launch --ephemeral ubuntu-daily:$release $SPREAD_SYSTEM --vm $options || launch_rc=$?
+        if [ $launch_rc -gt 0 ]; then
+          FATAL "Failed to launch LXD instance for release $release"
+        fi
+      fi
+
+      while true; do
+        status=$(lxc exec $SPREAD_SYSTEM -- systemctl is-system-running || true)
+        [ "$status" = "running" ] && break
+        if [ "$status" = "degraded" ]; then
+          FATAL "System is degraded, aborting"
+        fi
+        sleep 5
+      done
+      lxc exec $SPREAD_SYSTEM -- apt-get update
+      lxc exec $SPREAD_SYSTEM -- systemctl enable --now ssh
+      lxc exec $SPREAD_SYSTEM -- sed -i 's/^\s*#\?\s*\(PermitRootLogin\|PasswordAuthentication\)\>.*/\1 yes/' /etc/ssh/sshd_config
+      lxc exec $SPREAD_SYSTEM -- bash -c "sed -i 's/^\s*\(PermitRootLogin\|PasswordAuthentication\)\>.*/# COMMENTED OUT BY SPREAD: \0/' /etc/ssh/sshd_config.d/* || true"
+      lxc exec $SPREAD_SYSTEM -- bash -c "test -d /etc/ssh/sshd_config.d && echo -e 'PermitRootLogin=yes\nPasswordAuthentication=yes' > /etc/ssh/sshd_config.d/00-spread.conf"
+      lxc exec $SPREAD_SYSTEM -- bash -c "echo root:${SPREAD_SYSTEM_PASSWORD} | chpasswd"
+      lxc exec $SPREAD_SYSTEM -- killall -HUP sshd
+      ADDRESS `lxc list --format=json $SPREAD_SYSTEM | jq -r '.[0].state.network | to_entries[] | select(.key != "lo") | .value.addresses[] | select(.family=="inet") | .address' | head -1`
+        
+    discard: |
+      lxc delete -f $SPREAD_SYSTEM || true
+    systems:
+      - spread-helm-charts:
+          password: ubuntu
+
+prepare: |
+  snap install k8s --classic
+  k8s bootstrap
+  k8s status --wait-ready --timeout 5m
+
+  printf '#!/bin/sh\nexec k8s kubectl "$@"\n' > /usr/local/bin/kubectl
+  chmod +x /usr/local/bin/kubectl
+
+  mkdir -p ~/.kube
+  kubectl config view --raw > ~/.kube/config
+  
+  snap install helm --classic
+
+prepare-each: |
+  kubectl version
+  helm version
+
+suites:
+  # Expects a task.yaml to exist on every chart directory (e.g. charts/<chart-name>/task.yaml)
+  charts/:
+    summary: Tests for Helm charts
+
+kill-timeout: 1.5h
