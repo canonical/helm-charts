@@ -37,6 +37,12 @@ with open(values_file) as f:
     raw_lines = f.readlines()
 
 prev_helmdocs = None  # holds a "# -- desc" pending for the next key line
+indent_stack = []  # list of (indent_level, key_name) to track nesting
+
+def _current_prefix():
+    """Build the dotted prefix from the current indent stack."""
+    return '.'.join(k for _, k in indent_stack)
+
 for line in raw_lines:
     stripped = line.strip()
 
@@ -54,12 +60,32 @@ for line in raw_lines:
         prev_helmdocs = m.group(1).strip()
         continue
 
-    # If previous line was a helm-docs comment, attach to this key
-    if prev_helmdocs and ':' in stripped and not stripped.startswith('#'):
+    # Track indentation to build full dotted paths for non-comment YAML lines
+    if ':' in stripped and not stripped.startswith('#'):
+        indent = len(line) - len(line.lstrip())
         key = stripped.split(':', 1)[0].strip().strip('-').strip()
-        if key:
-            param_map[key] = prev_helmdocs
-    prev_helmdocs = None
+        if not key:
+            prev_helmdocs = None
+            continue
+
+        # Pop keys at same or deeper indent (sibling or child of previous)
+        while indent_stack and indent_stack[-1][0] >= indent:
+            indent_stack.pop()
+
+        # Check if this line defines a mapping (value is empty or a sub-block)
+        value_part = stripped.split(':', 1)[1].strip()
+        is_parent = value_part == '' or value_part.startswith('#')
+
+        if prev_helmdocs:
+            prefix = _current_prefix()
+            full_key = f'{prefix}.{key}' if prefix else key
+            param_map[full_key] = prev_helmdocs
+            prev_helmdocs = None
+
+        if is_parent:
+            indent_stack.append((indent, key))
+    else:
+        prev_helmdocs = None
 
 # --- Pass 2: parse YAML structure and extract inline comments ---
 yaml_parser = YAML()
@@ -106,6 +132,17 @@ def flatten(node, prefix=''):
     return items
 
 
+def escape_md_cell(text):
+    """Escape characters that break markdown table cells."""
+    s = str(text)
+    s = s.replace('\\', '\\\\')
+    s = s.replace('|', '\\|')
+    s = s.replace('`', '\\`')
+    s = s.replace('\n', ' ')
+    s = s.replace('\r', '')
+    return s
+
+
 rows = flatten(values)
 for key, val, inline_comment in rows:
     val_type = type(val).__name__
@@ -119,5 +156,7 @@ for key, val, inline_comment in rows:
 
     # Priority: @param / helm-docs annotation > inline comment > (inferred)
     description = param_map.get(key) or inline_comment or '(inferred)'
-    print(f'| `{key}` | `{val_type}` | `{val}` | {description} |')
+    val_escaped = escape_md_cell(val)
+    desc_escaped = escape_md_cell(description)
+    print(f'| `{escape_md_cell(key)}` | `{val_type}` | `{val_escaped}` | {desc_escaped} |')
 PYEOF

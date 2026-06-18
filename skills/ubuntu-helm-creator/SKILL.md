@@ -75,7 +75,7 @@ Use the plan to derive:
 
 #### 3. Generate the chart
 
-Invoke the `helm-generator` skill from `pantheon-ai/helm-toolkit`. Follow its intructions and then apply the **Canonical overrides** below.
+Invoke the `helm-generator` skill from `pantheon-ai/helm-toolkit`. Follow its instructions and then apply the **Canonical overrides** below.
 
 ##### Canonical overrides (authoritative)
 

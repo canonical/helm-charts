@@ -19,7 +19,7 @@ At the end of execution, you should provide a summary report, either in the chat
 
 ## Skill Index
 
-Each one of these skills are available to be used at your disposal. Those that are not available
+Each one of these skills is available to be used at your disposal. Skills that are not available
 in this repo can be either fetched directly from their source, or added with `npx`.
 
 | Skill                   | Purpose                                          | Source                                  |
