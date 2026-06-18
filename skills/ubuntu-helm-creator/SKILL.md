@@ -16,6 +16,7 @@ Generate Kubernetes Helm charts backed by Canonical Ubuntu OCI images (rocks).
 | **Zero-to-One**         | New chart from a rock | "Generate a Helm chart for `ubuntu/nginx:1.28-26.04_stable`"                                                                                                                                                                                                 |
 | **Feature Development** | Add features chart    | "Add missing features from https://artifacthub.io/packages/helm/bitnami/nginx into the Nginx chart" or "Add env var FOO to chart Nginx" or "Create a chart for `ubuntu/nginx:1.28-26.04_stable` based on https://artifacthub.io/packages/helm/bitnami/nginx" |
 
+
 ---
 
 ## Prerequisites
@@ -176,7 +177,6 @@ readinessProbe:
  - Add a `<chart-path>/tests/` directory with YAML test files for Helm unittest (see https://github.com/helm-unittest/helm-unittest)
 
 #### 5. Validate
-
 
 Invoke skill: [ubuntu-helm-validator](../ubuntu-helm-validator).
 
