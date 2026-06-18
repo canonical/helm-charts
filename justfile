@@ -9,8 +9,8 @@ default:
 # Install development dependencies
 setup:
 	#!/bin/bash
-	INSTALL=1 ./skills/ubuntu-helm-creator/scripts/setup.sh
-	INSTALL=1 ./skills/ubuntu-helm-validator/scripts/setup.sh
+	./skills/ubuntu-helm-creator/scripts/setup.sh --install
+	./skills/ubuntu-helm-validator/scripts/setup.sh --install
 	
 	uv pip install pre-commit
 	.venv/bin/pre-commit install
