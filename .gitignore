@@ -1,5 +1,6 @@
 # Packaged charts
 *.tgz
+
 .opencode
 .specify
 .venv
@@ -13,3 +14,6 @@ tessl*
 .claude
 .vscode
 .github/skills/
+
+# helm unittests
+__snapshot__
