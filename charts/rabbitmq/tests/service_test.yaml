@@ -1,0 +1,31 @@
+suite: test service
+templates:
+  - service.yaml
+tests:
+  - it: should be a Service
+    asserts:
+      - isKind:
+          of: Service
+
+  - it: should use ClusterIP by default
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should expose AMQP port
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 5672
+            targetPort: amqp
+            protocol: TCP
+            name: amqp
+
+  - it: should have correct selector labels
+    asserts:
+      - exists:
+          path: spec.selector["app.kubernetes.io/name"]
+      - exists:
+          path: spec.selector["app.kubernetes.io/instance"]

@@ -1,0 +1,105 @@
+suite: test deployment
+templates:
+  - deployment.yaml
+tests:
+  - it: should be a Deployment
+    asserts:
+      - isKind:
+          of: Deployment
+
+  - it: should use the correct image with digest
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/ubuntu/rabbitmq:4.0-26.04_stable@sha256:9d6a3268002b91e2c93a86726f281539cdd089a07d5fa681e506aad66b4e70d1"
+
+  - it: should use image tag only when digest is empty
+    set:
+      image.digest: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/ubuntu/rabbitmq:4.0-26.04_stable"
+
+  - it: should set PEBBLE_PERSIST to never
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PEBBLE_PERSIST
+            value: "never"
+
+  - it: should have PSS-Restricted security context
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop[0]
+          value: ALL
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should expose AMQP port
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: amqp
+            containerPort: 5672
+            protocol: TCP
+
+  - it: should have liveness probe using pebble health
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.exec.command
+          value: [/bin/pebble, health]
+
+  - it: should have readiness probe using pebble health
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.exec.command
+          value: [/bin/pebble, health]
+
+  - it: should have resource limits
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].resources.limits
+
+  - it: should have app.kubernetes.io/name label
+    asserts:
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+
+  - it: should mount writable volumes for tmp and data
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rabbitmq-data
+            mountPath: /var/lib/rabbitmq
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: rabbitmq-config
+            mountPath: /etc/rabbitmq
+
+  - it: should respect custom replica count
+    set:
+      replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3

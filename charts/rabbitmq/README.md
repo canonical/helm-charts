@@ -1,0 +1,74 @@
+# rabbitmq
+
+Helm chart for rabbitmq backed by the Ubuntu rock `ubuntu/rabbitmq`.
+
+RabbitMQ is an open source multi-protocol messaging broker.
+
+RabbitMQ is a reliable and mature messaging and streaming broker, which is
+easy to deploy on cloud environments, on-premises, and on your local machine.
+It is currently used by millions worldwide. This is a chiselled RabbitMQ
+image.
+
+## Architecture
+
+This chart deploys the following Kubernetes resources:
+
+- **Deployment** — runs the RabbitMQ server container using Pebble as the entrypoint
+- **Service** — exposes the AMQP port (5672) within the cluster
+- **ServiceAccount** — dedicated service account for the RabbitMQ pods
+
+The container uses Pebble-wired health probes (`/bin/pebble health`) for both liveness and readiness checks. A PSS-Restricted security context is applied with `readOnlyRootFilesystem: true`, requiring writable `emptyDir` volumes for `/tmp`, `/var/lib/rabbitmq`, and `/etc/rabbitmq`.
+
+## Prerequisites
+
+- Kubernetes 1.29+
+- Helm 3.x
+
+## Installation
+
+```bash
+helm install my-rabbitmq charts/rabbitmq/
+```
+
+## Configuration
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `image.repository` | `string` | `docker.io/ubuntu/rabbitmq` | Container image repository |
+| `image.tag` | `string` | `4.0-26.04_stable` | Image tag (mutable channel track) |
+| `image.digest` | `string` | `sha256:9d6a3268002b91e2c93a86726f281539cdd089a07d5fa681e506aad66b4e70d1` | Image digest for pinning (sha256:...). Leave empty to use tag only |
+| `image.pullPolicy` | `string` | `IfNotPresent` | Image pull policy |
+| `replicaCount` | `integer` | `1` | Number of replicas |
+| `nameOverride` | `string` | `""` | Override the chart name |
+| `fullnameOverride` | `string` | `""` | Override the full resource name |
+| `serviceAccount.create` | `boolean` | `true` | Whether to create a ServiceAccount |
+| `serviceAccount.annotations` | `object` | `{}` | Annotations to add to the ServiceAccount |
+| `serviceAccount.name` | `string` | `""` | Override the ServiceAccount name |
+| `podAnnotations` | `object` | `{}` | Annotations to add to the Pod |
+| `podSecurityContext` | `object` | `{}` | Security context for the Pod |
+| `securityContext.runAsNonRoot` | `boolean` | `true` | Require running as a non-root user |
+| `securityContext.allowPrivilegeEscalation` | `boolean` | `false` | Prevent privilege escalation |
+| `securityContext.readOnlyRootFilesystem` | `boolean` | `true` | Mount root filesystem as read-only |
+| `securityContext.capabilities.drop` | `list` | `[ALL]` | Linux capabilities to drop |
+| `securityContext.seccompProfile.type` | `string` | `RuntimeDefault` | Seccomp profile type |
+| `service.type` | `string` | `ClusterIP` | Service type |
+| `service.amqpPort` | `integer` | `5672` | AMQP service port |
+| `resources.limits.cpu` | `string` | `500m` | CPU resource limit |
+| `resources.limits.memory` | `string` | `512Mi` | Memory resource limit |
+| `resources.requests.cpu` | `string` | `100m` | CPU resource request |
+| `resources.requests.memory` | `string` | `128Mi` | Memory resource request |
+| `nodeSelector` | `object` | `{}` | Node selector for Pod scheduling |
+| `tolerations` | `list` | `[]` | Tolerations for Pod scheduling |
+| `affinity` | `object` | `{}` | Affinity rules for Pod scheduling |
+| `livenessProbe.exec.command` | `list` | `[/bin/pebble, health]` | Liveness probe command |
+| `livenessProbe.initialDelaySeconds` | `integer` | `30` | Liveness probe initial delay in seconds |
+| `livenessProbe.periodSeconds` | `integer` | `10` | Liveness probe period in seconds |
+| `readinessProbe.exec.command` | `list` | `[/bin/pebble, health]` | Readiness probe command |
+| `readinessProbe.initialDelaySeconds` | `integer` | `5` | Readiness probe initial delay in seconds |
+| `readinessProbe.periodSeconds` | `integer` | `5` | Readiness probe period in seconds |
+
+## Upgrading
+
+```bash
+helm upgrade my-rabbitmq charts/rabbitmq/
+```

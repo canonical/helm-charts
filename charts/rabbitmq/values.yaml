@@ -1,0 +1,84 @@
+# -- Container image repository
+image:
+  # -- Container image repository
+  repository: docker.io/ubuntu/rabbitmq
+  # -- Image tag (mutable channel track)
+  tag: "4.0-26.04_stable"
+  # -- Image digest for pinning (sha256:...). Leave empty to use tag only
+  digest: "sha256:9d6a3268002b91e2c93a86726f281539cdd089a07d5fa681e506aad66b4e70d1"
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Number of replicas
+replicaCount: 1
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full resource name
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Whether to create a ServiceAccount
+  create: true
+  # -- Annotations to add to the ServiceAccount
+  annotations: {}
+  # -- Override the ServiceAccount name
+  name: ""
+
+# -- Annotations to add to the Pod
+podAnnotations: {}
+
+# -- Security context for the Pod
+podSecurityContext: {}
+
+# -- Security context for the rabbitmq container
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- AMQP port
+  amqpPort: 5672
+
+# -- Resource requests and limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# -- Node selector for Pod scheduling
+nodeSelector: {}
+
+# -- Tolerations for Pod scheduling
+tolerations: []
+
+# -- Affinity rules for Pod scheduling
+affinity: {}
+
+livenessProbe:
+  exec:
+    # -- Liveness probe command
+    command: [/bin/pebble, health]
+  # -- Liveness probe initial delay in seconds
+  initialDelaySeconds: 30
+  # -- Liveness probe period in seconds
+  periodSeconds: 10
+
+readinessProbe:
+  exec:
+    # -- Readiness probe command
+    command: [/bin/pebble, health]
+  # -- Readiness probe initial delay in seconds
+  initialDelaySeconds: 5
+  # -- Readiness probe period in seconds
+  periodSeconds: 5
