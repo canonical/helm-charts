@@ -61,6 +61,18 @@ else
 	echo "kubeconform $(kubeconform -v)"
 fi
 
+# spread
+if ! command -v spread &> /dev/null; then
+	if [ -n "$INSTALL" ]; then
+		echo "installing spread..."
+		go install github.com/canonical/spread@main
+	else
+		OPTIONAL_TOOLS+=("spread")
+	fi
+else
+	echo "spread $(spread --version)"
+fi
+
 # kind (optional — needed for cluster dry-run)
 if ! command -v kind &> /dev/null; then
 	if [ -n "$INSTALL" ]; then

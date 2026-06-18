@@ -20,4 +20,10 @@ Validate Helm charts against both upstream best practices (via the `helm-validat
 
 ## Instructions
 
-Invoke the `helm-validator` skill from `pantheon-ai/helm-toolkit`, against the provided chart `<chart-path>`. Follow its entire pipeline.
+ - Invoke the `helm-validator` skill from `pantheon-ai/helm-toolkit`, against the provided chart `<chart-path>`. Follow its entire pipeline
+ - After the `helm-validator` skill completes, run these additional tests:
+   - Lint the chart using `scripts/run-test.sh lint <chart-path>`
+   - Render the chart templates using `scripts/run-test.sh render-templates <chart-path>`
+   - Run OPA policy tests using `scripts/run-test.sh test-policies <chart-path>`
+   - Run Helm unit tests using `scripts/run-test.sh unit-test <chart-path>`
+   - If Spread is installed (check with `command -v spread`), there is a `spread.yaml` file at the root of the project, and the chart has a `task.yaml` file, then run integration tests using `scripts/run-test.sh integration-test <chart-path>`. IMPORTANT: this script needs to be called from the root of the project, where the `spread.yaml` file is located.

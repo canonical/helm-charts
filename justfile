@@ -9,7 +9,8 @@ default:
 # Install development dependencies
 setup:
 	#!/bin/bash
-	INSTALL=1 ./skills/ubuntu-helm-creator/scripts/setup.sh
+	./skills/ubuntu-helm-creator/scripts/setup.sh --install
+	./skills/ubuntu-helm-validator/scripts/setup.sh --install
 	
 	uv pip install pre-commit
 	.venv/bin/pre-commit install
@@ -30,45 +31,38 @@ get-rock-filesystem image:
 get-rock-metadata image:
 	./skills/ubuntu-helm-creator/scripts/inspect-rock.sh metadata $1
 
+# Lint a Helm chart
 lint chart:
-	@echo "Linting Helm chart {{chart}}..."
-	helm lint charts/{{chart}}
+	./skills/ubuntu-helm-validator/scripts/run-test.sh lint charts/{{chart}}
 
+# Render Helm templates and optionally validate with kubectl
 render-templates chart:
-	#!/bin/bash
-	echo "Rendering Helm templates for chart {{chart}}..."
-	if command -v kubectl &> /dev/null; then
-		helm template test-templates-{{chart}} charts/{{chart}} | kubectl apply --dry-run=client -f -
-	else
-		helm template test-templates-{{chart}} charts/{{chart}} > /dev/null
-	fi
+	./skills/ubuntu-helm-validator/scripts/run-test.sh render-templates charts/{{chart}}
 
+# Test rendered templates against OPA policies
 test-policies chart:
-	@echo "Testing policies for chart {{chart}}..."
-	helm template test-templates-{{chart}} charts/{{chart}} | \
-	docker run --rm -i -v $(git rev-parse --show-toplevel):/project \
-		openpolicyagent/conftest@sha256:5fd81e332d7e4bc01daf3ef35371800a9a9720a30c0c37a78de0c5fbe4b6d622 \
-		test - --policy /project/policy.rego
+	./skills/ubuntu-helm-validator/scripts/run-test.sh test-policies charts/{{chart}}
 
+# Run Helm unittest tests
 unit-test chart:
-	@echo "Running Helm unittest for chart {{chart}}..."
-	helm unittest charts/{{chart}}
+	./skills/ubuntu-helm-validator/scripts/run-test.sh unit-test charts/{{chart}}
 
 integration-test chart:
-	@echo "Running integration tests for chart {{chart}}..."
-	spread charts/{{chart}}
+	./skills/ubuntu-helm-validator/scripts/run-test.sh integration-test charts/{{chart}}
 
+# Run all tests for a chart
 test chart:
 	#!/bin/bash
 	
 	ret=0
-	for action in lint render-templates test-policies unit-test #integration-test
+	for action in lint render-templates test-policies unit-test integration-test
 	do
 		just $action {{chart}} || ret=$?
 	done
 
 	exit $ret
 
+# Run all tests for all charts
 test-all:
 	#!/bin/bash
 
