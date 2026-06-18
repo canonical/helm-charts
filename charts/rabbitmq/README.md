@@ -52,7 +52,7 @@ helm install my-rabbitmq charts/rabbitmq/
 | `securityContext.capabilities.drop` | `list` | `[ALL]` | Linux capabilities to drop |
 | `securityContext.seccompProfile.type` | `string` | `RuntimeDefault` | Seccomp profile type |
 | `service.type` | `string` | `ClusterIP` | Service type |
-| `service.amqpPort` | `integer` | `5672` | AMQP service port |
+| `service.port` | `integer` | `5672` | Service port for AMQP connections |
 | `resources.limits.cpu` | `string` | `500m` | CPU resource limit |
 | `resources.limits.memory` | `string` | `512Mi` | Memory resource limit |
 | `resources.requests.cpu` | `string` | `100m` | CPU resource request |

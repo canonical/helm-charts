@@ -2,5 +2,5 @@ RabbitMQ has been deployed.
 
 Get the AMQP connection URL:
 {{- if eq .Values.service.type "ClusterIP" }}
-  kubectl port-forward svc/{{ include "rabbitmq.fullname" . }} {{ .Values.service.amqpPort }}:{{ .Values.service.amqpPort }}
+  kubectl port-forward svc/{{ include "rabbitmq.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
 {{- end }}

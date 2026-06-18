@@ -1,4 +1,3 @@
-# -- Container image repository
 image:
   # -- Container image repository
   repository: docker.io/ubuntu/rabbitmq
@@ -44,8 +43,8 @@ securityContext:
 service:
   # -- Service type
   type: ClusterIP
-  # -- AMQP port
-  amqpPort: 5672
+  # -- Service port for AMQP connections
+  port: 5672
 
 # -- Resource requests and limits
 resources:

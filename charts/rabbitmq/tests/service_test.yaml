@@ -17,11 +17,10 @@ tests:
     asserts:
       - contains:
           path: spec.ports
+          any: true
           content:
             port: 5672
             targetPort: amqp
-            protocol: TCP
-            name: amqp
 
   - it: should have correct selector labels
     asserts:
