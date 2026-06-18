@@ -107,6 +107,14 @@ Where `<rock-description>` comes from:
 scripts/inspect-rock.sh metadata <repo>/<name>:<tag> | jq '."org.opencontainers.image.description"'
 ```
 
+**Charts' consistency:**
+
+If the chart's folder (i.e. the `<chart-path>` parent folder) contains other charts,
+invoke the skill [ubuntu-helm-analyzer](../ubuntu-helm-analyzer) to analyze the existing charts and
+ensure that:
+ - the new chart's `Chart.yaml` has a unique `name:`
+ - the new chart's configuration follows the same conventions as the existing charts (e.g., `image:` block, `values.schema.json` structure, field naming, etc.)
+
 **Keep Pebble state in memory:**
 
 Ensure every container deployment has the environment variable `PEBBLE_PERSIST` set to `never`. Otherwise the PSS security context below won't be able to apply `readOnlyRootFilesystem: true`. 
