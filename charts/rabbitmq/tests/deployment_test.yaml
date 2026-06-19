@@ -98,8 +98,8 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
-            name: pebble
-            mountPath: /var/lib/pebble/default
+            name: pebble-identity
+            mountPath: /var/lib/pebble/default/identity
 
   - it: should respect custom replica count
     set:

@@ -119,6 +119,21 @@ ensure that:
 
 Ensure every container deployment has the environment variable `PEBBLE_PERSIST` set to `never`. Otherwise the PSS security context below won't be able to apply `readOnlyRootFilesystem: true`. 
 
+**Pebble writable directory:**
+
+When `readOnlyRootFilesystem: true` is set, Pebble still needs to create its identity directory at runtime. Mount an `emptyDir` volume at `/var/lib/pebble/default/identity` — **not** at `/var/lib/pebble/default`, which would shadow the `layers/` directory containing the rock's service definitions:
+
+```yaml
+volumeMounts:
+  - name: pebble-identity
+    mountPath: /var/lib/pebble/default/identity
+volumes:
+  - name: pebble-identity
+    emptyDir: {}
+```
+
+This mount must be present on every container that uses Pebble as its entrypoint.
+
 **Security context (PSS-Restricted — all Deployment/StatefulSet templates):**
 
 Always strive for:
