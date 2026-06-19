@@ -99,7 +99,7 @@ tests:
           path: spec.template.spec.containers[0].volumeMounts
           content:
             name: pebble
-            mountPath: /var/lib/pebble
+            mountPath: /var/lib/pebble/default
 
   - it: should respect custom replica count
     set:
