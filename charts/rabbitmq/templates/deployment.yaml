@@ -28,24 +28,28 @@ spec:
           image: {{ include "rabbitmq.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            # The rock bakes Pebble's config dir and HOME at /var/lib/pebble/default,
-            # which sits on the image's root filesystem and is therefore read-only when
-            # readOnlyRootFilesystem: true. Pebble needs to write its socket, state and
-            # identity files, and Erlang needs to write $HOME/.erlang.cookie, so we
-            # redirect both PEBBLE and HOME to a writable emptyDir (/run/pebble) and seed
-            # it from the baked layers via PEBBLE_COPY_ONCE.
-            # TODO: This is a workaround. The proper fix belongs in the rock, which should
-            # place its Pebble dir / HOME on a path designed to be backed by a writable
-            # volume (and create the needed subdirs with correct permissions), so charts
-            # don't each need to override these env vars. Track upstream in the rock.
+            # Pebble's config dir is baked at /var/lib/pebble/default, which lives on the
+            # image's read-only root filesystem (readOnlyRootFilesystem: true). Pebble must
+            # write its socket, state and identity files, so we point PEBBLE at a writable
+            # emptyDir (/run/pebble) and seed it from the baked layers via PEBBLE_COPY_ONCE.
+            # PEBBLE_PERSIST=never keeps Pebble's state in memory so nothing is written back
+            # to the read-only rootfs.
+            # TODO: The PEBBLE/PEBBLE_COPY_ONCE redirect is a rock-level concern. The rock
+            # should place its Pebble dir on a path designed to be backed by a writable
+            # volume so charts don't each need to override these env vars. Track upstream.
             - name: PEBBLE
               value: /run/pebble
             - name: PEBBLE_COPY_ONCE
               value: /var/lib/pebble/default
             - name: PEBBLE_PERSIST
               value: "never"
+            # The _daemon_ user's home is /var/lib/pebble/default (read-only), so Erlang
+            # cannot write its $HOME/.erlang.cookie there. Point HOME at RabbitMQ's own
+            # data directory (/var/lib/rabbitmq), which is already a writable volume and is
+            # the idiomatic location for the Erlang cookie (matching the RabbitMQ Cluster
+            # Operator and upstream charts).
             - name: HOME
-              value: /run/pebble
+              value: /var/lib/rabbitmq
           ports:
             - name: amqp
               containerPort: 5672

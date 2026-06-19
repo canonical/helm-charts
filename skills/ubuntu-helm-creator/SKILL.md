@@ -128,7 +128,7 @@ When `readOnlyRootFilesystem: true` is set, Pebble still needs a writable direct
 
 Instead, redirect Pebble to a **fresh writable directory** using the `PEBBLE` and `PEBBLE_COPY_ONCE` environment variables. Pebble will copy the layers from the original location on first start and create the identity directory with the correct 0700 permissions.
 
-Additionally, rocks may set a `HOME` environment variable to a path that becomes read-only at runtime, so `HOME` must also be redirected to the writable Pebble directory — otherwise applications that write to `$HOME` at runtime (e.g. Erlang's `.erlang.cookie`) will fail with `erofs`:
+Separately, the rock's service user (e.g. `_daemon_`) has a home directory baked into `/etc/passwd` (often `/var/lib/pebble/default`), which is read-only at runtime. Pebble sets `HOME` from this passwd entry for the service process, so any application that writes to `$HOME` (e.g. Erlang's `.erlang.cookie`) will fail with `erofs`. Override `HOME` via container env — the container value **does** reach the service — and point it at the application's **own writable data directory** (not Pebble's runtime dir), which is the idiomatic location for such files:
 
 ```yaml
 env:
@@ -138,8 +138,10 @@ env:
     value: /var/lib/pebble/default
   - name: PEBBLE_PERSIST
     value: "never"
+  # Point HOME at the app's own writable data dir (example: RabbitMQ uses
+  # /var/lib/rabbitmq), not at the Pebble runtime dir.
   - name: HOME
-    value: /run/pebble
+    value: /var/lib/<app-data-dir>
 volumeMounts:
   - name: pebble-run
     mountPath: /run/pebble
@@ -148,7 +150,9 @@ volumes:
     emptyDir: {}
 ```
 
-This pattern must be present on every workload that uses Pebble as its entrypoint.
+The `PEBBLE`/`PEBBLE_COPY_ONCE`/`PEBBLE_PERSIST` redirect must be present on every workload that uses Pebble as its entrypoint. Add the `HOME` override only when the application writes to `$HOME` at runtime.
+
+> TODO (rock-level): The Pebble dir and the service user's home both default to a read-only baked path. Ideally the rock would place these on paths designed to be backed by writable volumes so charts don't need to override these env vars. Track upstream.
 
 **Security context (PSS-Restricted — all Deployment/StatefulSet templates):**
 

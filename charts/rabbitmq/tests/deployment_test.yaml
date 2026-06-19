@@ -45,7 +45,7 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: HOME
-            value: /run/pebble
+            value: /var/lib/rabbitmq
 
   - it: should have PSS-Restricted security context
     asserts:
