@@ -28,12 +28,24 @@ spec:
           image: {{ include "rabbitmq.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            # The rock bakes Pebble's config dir and HOME at /var/lib/pebble/default,
+            # which sits on the image's root filesystem and is therefore read-only when
+            # readOnlyRootFilesystem: true. Pebble needs to write its socket, state and
+            # identity files, and Erlang needs to write $HOME/.erlang.cookie, so we
+            # redirect both PEBBLE and HOME to a writable emptyDir (/run/pebble) and seed
+            # it from the baked layers via PEBBLE_COPY_ONCE.
+            # TODO: This is a workaround. The proper fix belongs in the rock, which should
+            # place its Pebble dir / HOME on a path designed to be backed by a writable
+            # volume (and create the needed subdirs with correct permissions), so charts
+            # don't each need to override these env vars. Track upstream in the rock.
             - name: PEBBLE
               value: /run/pebble
             - name: PEBBLE_COPY_ONCE
               value: /var/lib/pebble/default
             - name: PEBBLE_PERSIST
               value: "never"
+            - name: HOME
+              value: /run/pebble
           ports:
             - name: amqp
               containerPort: 5672
@@ -57,16 +69,12 @@ spec:
               mountPath: /tmp
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq
-            - name: rabbitmq-config
-              mountPath: /etc/rabbitmq
             - name: pebble-run
               mountPath: /run/pebble
       volumes:
         - name: tmp
           emptyDir: {}
         - name: rabbitmq-data
-          emptyDir: {}
-        - name: rabbitmq-config
           emptyDir: {}
         - name: pebble-run
           emptyDir: {}

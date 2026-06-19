@@ -41,6 +41,11 @@ tests:
           content:
             name: PEBBLE_COPY_ONCE
             value: /var/lib/pebble/default
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HOME
+            value: /run/pebble
 
   - it: should have PSS-Restricted security context
     asserts:
@@ -103,11 +108,6 @@ tests:
           content:
             name: rabbitmq-data
             mountPath: /var/lib/rabbitmq
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: rabbitmq-config
-            mountPath: /etc/rabbitmq
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:

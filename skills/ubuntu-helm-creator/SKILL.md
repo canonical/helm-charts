@@ -126,7 +126,9 @@ When `readOnlyRootFilesystem: true` is set, Pebble still needs a writable direct
 - Mounting at `/var/lib/pebble/default/identity` creates it with 0777 permissions, but Pebble requires exactly 0700.
 - Using an `initContainer` with `chmod` is unreliable because rocks are minimal images that may not contain `sh` or `chmod`.
 
-Instead, redirect Pebble to a **fresh writable directory** using the `PEBBLE` and `PEBBLE_COPY_ONCE` environment variables. Pebble will copy the layers from the original location on first start and create the identity directory with the correct 0700 permissions:
+Instead, redirect Pebble to a **fresh writable directory** using the `PEBBLE` and `PEBBLE_COPY_ONCE` environment variables. Pebble will copy the layers from the original location on first start and create the identity directory with the correct 0700 permissions.
+
+Additionally, rocks may set a `HOME` environment variable to a path that becomes read-only at runtime, so `HOME` must also be redirected to the writable Pebble directory — otherwise applications that write to `$HOME` at runtime (e.g. Erlang's `.erlang.cookie`) will fail with `erofs`:
 
 ```yaml
 env:
@@ -136,6 +138,8 @@ env:
     value: /var/lib/pebble/default
   - name: PEBBLE_PERSIST
     value: "never"
+  - name: HOME
+    value: /run/pebble
 volumeMounts:
   - name: pebble-run
     mountPath: /run/pebble
