@@ -95,6 +95,11 @@ tests:
           content:
             name: rabbitmq-config
             mountPath: /etc/rabbitmq
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: pebble
+            mountPath: /var/lib/pebble
 
   - it: should respect custom replica count
     set:

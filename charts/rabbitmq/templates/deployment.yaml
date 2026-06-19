@@ -55,12 +55,16 @@ spec:
               mountPath: /var/lib/rabbitmq
             - name: rabbitmq-config
               mountPath: /etc/rabbitmq
+            - name: pebble
+              mountPath: /var/lib/pebble
       volumes:
         - name: tmp
           emptyDir: {}
         - name: rabbitmq-data
           emptyDir: {}
         - name: rabbitmq-config
+          emptyDir: {}
+        - name: pebble
           emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
