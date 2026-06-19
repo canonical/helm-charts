@@ -119,20 +119,32 @@ ensure that:
 
 Ensure every container deployment has the environment variable `PEBBLE_PERSIST` set to `never`. Otherwise the PSS security context below won't be able to apply `readOnlyRootFilesystem: true`. 
 
-**Pebble writable directory:**
+**Pebble writable runtime directory:**
 
-When `readOnlyRootFilesystem: true` is set, Pebble still needs to create its identity directory at runtime. Mount an `emptyDir` volume at `/var/lib/pebble/default/identity` — **not** at `/var/lib/pebble/default`, which would shadow the `layers/` directory containing the rock's service definitions:
+When `readOnlyRootFilesystem: true` is set, Pebble still needs a writable directory for its socket, state, and identity files. You **cannot** mount an `emptyDir` directly inside `/var/lib/pebble/default` because:
+- Mounting at `/var/lib/pebble/default` shadows the `layers/` directory baked into the image (no services found).
+- Mounting at `/var/lib/pebble/default/identity` creates it with 0777 permissions, but Pebble requires exactly 0700.
+- Using an `initContainer` with `chmod` is unreliable because rocks are minimal images that may not contain `sh` or `chmod`.
+
+Instead, redirect Pebble to a **fresh writable directory** using the `PEBBLE` and `PEBBLE_COPY_ONCE` environment variables. Pebble will copy the layers from the original location on first start and create the identity directory with the correct 0700 permissions:
 
 ```yaml
+env:
+  - name: PEBBLE
+    value: /run/pebble
+  - name: PEBBLE_COPY_ONCE
+    value: /var/lib/pebble/default
+  - name: PEBBLE_PERSIST
+    value: "never"
 volumeMounts:
-  - name: pebble-identity
-    mountPath: /var/lib/pebble/default/identity
+  - name: pebble-run
+    mountPath: /run/pebble
 volumes:
-  - name: pebble-identity
+  - name: pebble-run
     emptyDir: {}
 ```
 
-This mount must be present on every container that uses Pebble as its entrypoint.
+This pattern must be present on every workload that uses Pebble as its entrypoint.
 
 **Security context (PSS-Restricted — all Deployment/StatefulSet templates):**
 

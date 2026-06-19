@@ -28,6 +28,10 @@ spec:
           image: {{ include "rabbitmq.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            - name: PEBBLE
+              value: /run/pebble
+            - name: PEBBLE_COPY_ONCE
+              value: /var/lib/pebble/default
             - name: PEBBLE_PERSIST
               value: "never"
           ports:
@@ -55,8 +59,8 @@ spec:
               mountPath: /var/lib/rabbitmq
             - name: rabbitmq-config
               mountPath: /etc/rabbitmq
-            - name: pebble-identity
-              mountPath: /var/lib/pebble/default/identity
+            - name: pebble-run
+              mountPath: /run/pebble
       volumes:
         - name: tmp
           emptyDir: {}
@@ -64,7 +68,7 @@ spec:
           emptyDir: {}
         - name: rabbitmq-config
           emptyDir: {}
-        - name: pebble-identity
+        - name: pebble-run
           emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:

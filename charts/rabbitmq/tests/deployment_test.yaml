@@ -29,6 +29,19 @@ tests:
             name: PEBBLE_PERSIST
             value: "never"
 
+  - it: should redirect PEBBLE to writable directory with PEBBLE_COPY_ONCE
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PEBBLE
+            value: /run/pebble
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PEBBLE_COPY_ONCE
+            value: /var/lib/pebble/default
+
   - it: should have PSS-Restricted security context
     asserts:
       - equal:
@@ -98,8 +111,8 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
-            name: pebble-identity
-            mountPath: /var/lib/pebble/default/identity
+            name: pebble-run
+            mountPath: /run/pebble
 
   - it: should respect custom replica count
     set:
