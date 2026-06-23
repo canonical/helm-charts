@@ -1,0 +1,44 @@
+name: Test Helm Charts
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "charts/**"
+
+jobs:
+  detect-charts:
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.changed.outputs.charts }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed charts
+        id: changed
+        run: |
+          charts=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- charts/ \
+            | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "charts=$charts" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: detect-charts
+    if: needs.detect-charts.outputs.charts != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        chart: ${{ fromJson(needs.detect-charts.outputs.charts) }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install just
+        run: sudo snap install just --classic
+
+      - name: Setup environment
+        run: just setup
+
+      - name: Test chart ${{ matrix.chart }}
+        run: just test ${{ matrix.chart }}
