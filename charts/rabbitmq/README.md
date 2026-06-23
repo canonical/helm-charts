@@ -22,7 +22,7 @@ The container uses TCP socket probes against the AMQP port (5672) for liveness a
 ## Prerequisites
 
 - Kubernetes 1.29+
-- Helm 3.x
+- Helm 3+
 
 ## Installation
 
