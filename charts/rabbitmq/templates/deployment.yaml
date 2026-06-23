@@ -27,29 +27,6 @@ spec:
         - name: rabbitmq
           image: {{ include "rabbitmq.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            # Pebble's config dir is baked at /var/lib/pebble/default, which lives on the
-            # image's read-only root filesystem (readOnlyRootFilesystem: true). Pebble must
-            # write its socket, state and identity files, so we point PEBBLE at a writable
-            # emptyDir (/run/pebble) and seed it from the baked layers via PEBBLE_COPY_ONCE.
-            # PEBBLE_PERSIST=never keeps Pebble's state in memory so nothing is written back
-            # to the read-only rootfs.
-            # TODO: The PEBBLE/PEBBLE_COPY_ONCE redirect is a rock-level concern. The rock
-            # should place its Pebble dir on a path designed to be backed by a writable
-            # volume so charts don't each need to override these env vars. Track upstream.
-            - name: PEBBLE
-              value: /run/pebble
-            - name: PEBBLE_COPY_ONCE
-              value: /var/lib/pebble/default
-            - name: PEBBLE_PERSIST
-              value: "never"
-            # The _daemon_ user's home is /var/lib/pebble/default (read-only), so Erlang
-            # cannot write its $HOME/.erlang.cookie there. Point HOME at RabbitMQ's own
-            # data directory (/var/lib/rabbitmq), which is already a writable volume and is
-            # the idiomatic location for the Erlang cookie (matching the RabbitMQ Cluster
-            # Operator and upstream charts).
-            - name: HOME
-              value: /var/lib/rabbitmq
           ports:
             - name: amqp
               containerPort: 5672
@@ -68,20 +45,6 @@ spec:
           {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-            - name: rabbitmq-data
-              mountPath: /var/lib/rabbitmq
-            - name: pebble-run
-              mountPath: /run/pebble
-      volumes:
-        - name: tmp
-          emptyDir: {}
-        - name: rabbitmq-data
-          emptyDir: {}
-        - name: pebble-run
-          emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

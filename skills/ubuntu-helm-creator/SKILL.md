@@ -119,41 +119,6 @@ ensure that:
 
 Ensure every container deployment has the environment variable `PEBBLE_PERSIST` set to `never`. Otherwise the PSS security context below won't be able to apply `readOnlyRootFilesystem: true`. 
 
-**Pebble writable runtime directory:**
-
-When `readOnlyRootFilesystem: true` is set, Pebble still needs a writable directory for its socket, state, and identity files. You **cannot** mount an `emptyDir` directly inside `/var/lib/pebble/default` because:
-- Mounting at `/var/lib/pebble/default` shadows the `layers/` directory baked into the image (no services found).
-- Mounting at `/var/lib/pebble/default/identity` creates it with 0777 permissions, but Pebble requires exactly 0700.
-- Using an `initContainer` with `chmod` is unreliable because rocks are minimal images that may not contain `sh` or `chmod`.
-
-Instead, redirect Pebble to a **fresh writable directory** using the `PEBBLE` and `PEBBLE_COPY_ONCE` environment variables. Pebble will copy the layers from the original location on first start and create the identity directory with the correct 0700 permissions.
-
-Separately, the rock's service user (e.g. `_daemon_`) has a home directory baked into `/etc/passwd` (often `/var/lib/pebble/default`), which is read-only at runtime. Pebble sets `HOME` from this passwd entry for the service process, so any application that writes to `$HOME` (e.g. Erlang's `.erlang.cookie`) will fail with `erofs`. Override `HOME` via container env — the container value **does** reach the service — and point it at the application's **own writable data directory** (not Pebble's runtime dir), which is the idiomatic location for such files:
-
-```yaml
-env:
-  - name: PEBBLE
-    value: /run/pebble
-  - name: PEBBLE_COPY_ONCE
-    value: /var/lib/pebble/default
-  - name: PEBBLE_PERSIST
-    value: "never"
-  # Point HOME at the app's own writable data dir (example: RabbitMQ uses
-  # /var/lib/rabbitmq), not at the Pebble runtime dir.
-  - name: HOME
-    value: /var/lib/<app-data-dir>
-volumeMounts:
-  - name: pebble-run
-    mountPath: /run/pebble
-volumes:
-  - name: pebble-run
-    emptyDir: {}
-```
-
-The `PEBBLE`/`PEBBLE_COPY_ONCE`/`PEBBLE_PERSIST` redirect must be present on every workload that uses Pebble as its entrypoint. Add the `HOME` override only when the application writes to `$HOME` at runtime.
-
-> TODO (rock-level): The Pebble dir and the service user's home both default to a read-only baked path. Ideally the rock would place these on paths designed to be backed by writable volumes so charts don't need to override these env vars. Track upstream.
-
 **Security context (PSS-Restricted — all Deployment/StatefulSet templates):**
 
 Always strive for:
@@ -173,8 +138,13 @@ If needing to adjust the security context after validating the chart, then justi
 
 ##### Pebble-wired probes
 
-When Pebble checks exist in the plan, map them to Kubernetes probes.
-When no checks are defined, use generic Pebble health defaults:
+Probes must reflect whether the **application** actually started — not merely
+whether the Pebble daemon is up. This distinction matters because `helm install
+--wait` (and the integration test) gate on the readiness probe: a probe that
+reports ready too eagerly will let a broken deployment pass as healthy.
+
+When the rock's Pebble plan defines health `checks:`, map them to Kubernetes
+probes via `[/bin/pebble, health]` — Pebble then exits non-zero if a check fails:
 ```yaml
 livenessProbe:
   exec:
@@ -188,13 +158,25 @@ readinessProbe:
   periodSeconds: 5
 ```
 
+> WARNING: If the plan defines **no** `checks:`, `pebble health` succeeds as soon
+> as the Pebble daemon is running, even while the actual service crash-loops.
+> Inspect the plan (`pebble plan` / the baked layer) and confirm checks exist
+> before using `pebble health`. When there are no checks, probe the service
+> directly instead — for a networked service, a `tcpSocket` probe on its port
+> needs no in-container tooling and only succeeds once the app binds the port:
+> ```yaml
+> readinessProbe:
+>   tcpSocket:
+>     port: <service-port-name>
+> ```
+
 ##### `LICENSE` file
 
 **IF** requested, add a `LICENSE` file in the `<chart-path>`.
 
 #### 4. Add tests
 
- - If not yet present, generate `<chart-path>/templates/tests/test-connection.yaml` with a simple test that verifies the container is running and responding to Pebble checks
+ - If not yet present, generate `<chart-path>/templates/tests/test-connection.yaml` with a test that connects to the **deployed** service and verifies the application actually started (e.g. open a TCP connection to the service's port, or perform an application-level request). Do not merely run `pebble health` in a throwaway pod — that does not exercise the deployed workload and can pass even when the app failed to start.
  - Add a `<chart-path>/task.yaml` file. This is a Spread task definition (see https://github.com/canonical/spread), and should look like this:
   
     ```yaml

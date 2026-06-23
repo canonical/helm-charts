@@ -21,33 +21,7 @@ tests:
           path: spec.template.spec.containers[0].image
           value: "docker.io/ubuntu/rabbitmq:4.0-26.04_stable"
 
-  - it: should set PEBBLE_PERSIST to never
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: PEBBLE_PERSIST
-            value: "never"
-
-  - it: should redirect PEBBLE to writable directory with PEBBLE_COPY_ONCE
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: PEBBLE
-            value: /run/pebble
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: PEBBLE_COPY_ONCE
-            value: /var/lib/pebble/default
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: HOME
-            value: /var/lib/rabbitmq
-
-  - it: should have PSS-Restricted security context
+  - it: should have the expected security context
     asserts:
       - equal:
           path: spec.template.spec.containers[0].securityContext.runAsNonRoot
@@ -57,7 +31,7 @@ tests:
           value: false
       - equal:
           path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
-          value: true
+          value: false
       - equal:
           path: spec.template.spec.containers[0].securityContext.capabilities.drop[0]
           value: ALL
@@ -74,45 +48,27 @@ tests:
             containerPort: 5672
             protocol: TCP
 
-  - it: should have liveness probe using pebble health
+  - it: should have liveness probe targeting the AMQP port
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].livenessProbe.exec.command
-          value: [/bin/pebble, health]
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: amqp
 
-  - it: should have readiness probe using pebble health
+  - it: should have readiness probe targeting the AMQP port
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].readinessProbe.exec.command
-          value: [/bin/pebble, health]
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: amqp
 
   - it: should have resource limits
     asserts:
-      - isNotNull:
+      - isNotNullOrEmpty:
           path: spec.template.spec.containers[0].resources.limits
 
   - it: should have app.kubernetes.io/name label
     asserts:
       - exists:
           path: metadata.labels["app.kubernetes.io/name"]
-
-  - it: should mount writable volumes for tmp and data
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: tmp
-            mountPath: /tmp
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: rabbitmq-data
-            mountPath: /var/lib/rabbitmq
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: pebble-run
-            mountPath: /run/pebble
 
   - it: should respect custom replica count
     set:

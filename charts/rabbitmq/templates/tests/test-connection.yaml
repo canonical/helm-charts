@@ -8,9 +8,21 @@ metadata:
     "helm.sh/hook": test
 spec:
   containers:
-    - name: pebble-health
+    # Verify the deployed broker actually started by opening a TCP connection to
+    # its AMQP port over the network. This fails if rabbitmq-server did not boot
+    # successfully, regardless of the underlying reason. The Erlang runtime is
+    # already part of the rock, so no extra tooling is required.
+    - name: amqp-connect
       image: {{ include "rabbitmq.image" . | quote }}
-      command: ["/bin/pebble", "health"]
+      command:
+        - /usr/bin/erl
+        - -noshell
+        - -eval
+        - >-
+          case gen_tcp:connect("{{ include "rabbitmq.fullname" . }}", {{ .Values.service.port }}, [], 5000) of
+          {ok, S} -> gen_tcp:close(S), halt(0);
+          {error, R} -> io:format("AMQP connect failed: ~p~n", [R]), halt(1)
+          end.
       securityContext:
         runAsNonRoot: true
         allowPrivilegeEscalation: false

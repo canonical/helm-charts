@@ -34,7 +34,18 @@ podSecurityContext: {}
 securityContext:
   runAsNonRoot: true
   allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true
+  # NOTE: This chart is an exception to the project-wide default of
+  # readOnlyRootFilesystem: true. The RabbitMQ rock runs Erlang via Pebble, and
+  # both Pebble (socket/state/identity files under /var/lib/pebble/default) and
+  # Erlang (the .erlang.cookie under the _daemon_ user's passwd HOME, which is
+  # also /var/lib/pebble/default) write to the image's root filesystem at
+  # runtime. Pebble forces HOME from the service user's passwd entry, so a
+  # container-level HOME override does not reach the service process, and the
+  # baked Pebble dir cannot be shadowed by an emptyDir without losing the layers.
+  # Until the rock relocates these writable paths to dedicated volume-friendly
+  # locations, we keep readOnlyRootFilesystem disabled for this chart.
+  # TODO: Re-enable readOnlyRootFilesystem: true once the rock supports it.
+  readOnlyRootFilesystem: false
   capabilities:
     drop: [ALL]
   seccompProfile:
@@ -64,19 +75,26 @@ tolerations: []
 # -- Affinity rules for Pod scheduling
 affinity: {}
 
+# NOTE: The probes intentionally do NOT use `pebble health`. This rock's Pebble
+# plan defines no health checks, so `pebble health` succeeds as soon as the
+# Pebble daemon is up — even while the rabbitmq-server service crash-loops. That
+# false positive previously let a broken deployment pass `helm install --wait`.
+# A tcpSocket probe on the AMQP port only succeeds once the broker actually boots
+# and binds the port, so it reflects real application readiness regardless of the
+# underlying failure.
 livenessProbe:
-  exec:
-    # -- Liveness probe command
-    command: [/bin/pebble, health]
+  tcpSocket:
+    # -- Liveness probe target port (AMQP)
+    port: amqp
   # -- Liveness probe initial delay in seconds
   initialDelaySeconds: 30
   # -- Liveness probe period in seconds
   periodSeconds: 10
 
 readinessProbe:
-  exec:
-    # -- Readiness probe command
-    command: [/bin/pebble, health]
+  tcpSocket:
+    # -- Readiness probe target port (AMQP)
+    port: amqp
   # -- Readiness probe initial delay in seconds
   initialDelaySeconds: 5
   # -- Readiness probe period in seconds
