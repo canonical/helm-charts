@@ -28,7 +28,7 @@ fi
 if ! command -v helm &> /dev/null; then
 	if [ -n "$INSTALL" ]; then
 		echo "installing helm..."
-		sudo snap install helm --classic --stable
+		sudo snap install helm --classic --channel=latest/stable
 	else
 		MISSING_TOOLS+=("helm")
 	fi
