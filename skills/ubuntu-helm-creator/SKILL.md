@@ -139,8 +139,8 @@ If needing to adjust the security context after validating the chart, then justi
 ##### Pebble-wired probes
 
 Probes must reflect whether the **application** actually started — not merely
-whether the Pebble daemon is up. This distinction matters because `helm install
---wait` (and the integration test) gate on the readiness probe: a probe that
+whether the Pebble daemon is up. This distinction matters because `helm install --wait`
+(and the integration test) gate on the readiness probe: a probe that
 reports ready too eagerly will let a broken deployment pass as healthy.
 
 When the rock's Pebble plan defines health `checks:`, map them to Kubernetes
