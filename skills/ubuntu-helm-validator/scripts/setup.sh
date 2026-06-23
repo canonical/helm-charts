@@ -71,7 +71,7 @@ fi
 if ! command -v spread &> /dev/null; then
 	if [ -n "$INSTALL" ]; then
 		echo "installing spread..."
-		go install github.com/canonical/spread/cmd/spread@main
+		go install github.com/canonical/spread/cmd/spread@master
 	else
 		OPTIONAL_TOOLS+=("spread")
 	fi
