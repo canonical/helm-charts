@@ -6,7 +6,9 @@ metadata:
     {{- include "rabbitmq.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
+  automountServiceAccountToken: false
   containers:
     # Verify the deployed broker actually started by opening a TCP connection to
     # its AMQP port over the network. This fails if rabbitmq-server did not boot
