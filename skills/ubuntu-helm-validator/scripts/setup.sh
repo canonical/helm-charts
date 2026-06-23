@@ -38,7 +38,7 @@ fi
 
 # helm plugins (installed only when INSTALL is set and helm is available)
 if [ -n "$INSTALL" ] && command -v helm &> /dev/null; then
-	HELM_MAJOR=$(helm version --short 2>/dev/null | grep -oP 'v\K[0-9]+')
+	HELM_MAJOR=$(helm version --short 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')
 	VERIFY_FLAG=""
 	if [ "${HELM_MAJOR:-3}" -ge 4 ]; then
 		VERIFY_FLAG="--verify=false"
