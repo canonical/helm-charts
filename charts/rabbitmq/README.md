@@ -17,7 +17,7 @@ This chart deploys the following Kubernetes resources:
 - **Service** — exposes the AMQP port (5672) within the cluster
 - **ServiceAccount** — dedicated service account for the RabbitMQ pods
 
-The container uses Pebble-wired health probes (`/bin/pebble health`) for both liveness and readiness checks. A PSS-Restricted security context is applied with `readOnlyRootFilesystem: true`, requiring writable `emptyDir` volumes for `/tmp`, `/var/lib/rabbitmq`, and `/etc/rabbitmq`.
+The container uses TCP socket probes against the AMQP port (5672) for liveness and readiness to ensure the broker actually started. A PSS-Restricted security context is applied; however `readOnlyRootFilesystem` is disabled by default because the current rock writes to the image filesystem at runtime (see `values.yaml`).
 
 ## Prerequisites
 
@@ -48,7 +48,7 @@ helm install my-rabbitmq charts/rabbitmq/
 | `podSecurityContext` | `object` | `{}` | Security context for the Pod |
 | `securityContext.runAsNonRoot` | `boolean` | `true` | Require running as a non-root user |
 | `securityContext.allowPrivilegeEscalation` | `boolean` | `false` | Prevent privilege escalation |
-| `securityContext.readOnlyRootFilesystem` | `boolean` | `true` | Mount root filesystem as read-only |
+| `securityContext.readOnlyRootFilesystem` | `boolean` | `false` | Mount root filesystem as read-only |
 | `securityContext.capabilities.drop` | `list` | `[ALL]` | Linux capabilities to drop |
 | `securityContext.seccompProfile.type` | `string` | `RuntimeDefault` | Seccomp profile type |
 | `service.type` | `string` | `ClusterIP` | Service type |
@@ -60,10 +60,10 @@ helm install my-rabbitmq charts/rabbitmq/
 | `nodeSelector` | `object` | `{}` | Node selector for Pod scheduling |
 | `tolerations` | `list` | `[]` | Tolerations for Pod scheduling |
 | `affinity` | `object` | `{}` | Affinity rules for Pod scheduling |
-| `livenessProbe.exec.command` | `list` | `[/bin/pebble, health]` | Liveness probe command |
+| `livenessProbe.tcpSocket.port` | `string` | `amqp` | Liveness probe target port (AMQP) |
 | `livenessProbe.initialDelaySeconds` | `integer` | `30` | Liveness probe initial delay in seconds |
 | `livenessProbe.periodSeconds` | `integer` | `10` | Liveness probe period in seconds |
-| `readinessProbe.exec.command` | `list` | `[/bin/pebble, health]` | Readiness probe command |
+| `readinessProbe.tcpSocket.port` | `string` | `amqp` | Readiness probe target port (AMQP) |
 | `readinessProbe.initialDelaySeconds` | `integer` | `5` | Readiness probe initial delay in seconds |
 | `readinessProbe.periodSeconds` | `integer` | `5` | Readiness probe period in seconds |
 

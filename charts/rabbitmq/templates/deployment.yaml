@@ -27,6 +27,9 @@ spec:
         - name: rabbitmq
           image: {{ include "rabbitmq.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: PEBBLE_PERSIST
+              value: "never"
           ports:
             - name: amqp
               containerPort: 5672
