@@ -1,10 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "rabbitmq.fullname" . }}
   labels:
     {{- include "rabbitmq.labels" . | nindent 4 }}
 spec:
+  serviceName: {{ include "rabbitmq.fullname" . }}-headless
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
@@ -30,10 +31,38 @@ spec:
           env:
             - name: PEBBLE_PERSIST
               value: "never"
+            - name: RABBITMQ_ERLANG_COOKIE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "rabbitmq.fullname" . }}-erlang-cookie
+                  key: erlang-cookie
+            {{- if gt (int .Values.replicaCount) 1 }}
+            - name: RABBITMQ_USE_LONGNAME
+              value: "true"
+            - name: RABBITMQ_NODENAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: K8S_SERVICE_NAME
+              value: {{ include "rabbitmq.fullname" . }}-headless
+            - name: K8S_HOSTNAME_SUFFIX
+              value: .{{ include "rabbitmq.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local
+            {{- end }}
           ports:
             - name: amqp
               containerPort: 5672
               protocol: TCP
+            - name: epmd
+              containerPort: 4369
+              protocol: TCP
+            - name: dist
+              containerPort: 25672
+              protocol: TCP
+            {{- if .Values.clustering.managementPort }}
+            - name: management
+              containerPort: 15672
+              protocol: TCP
+            {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -48,6 +77,9 @@ spec:
           {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -60,3 +92,17 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          {{- range .Values.persistence.accessModes }}
+          - {{ . | quote }}
+          {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | quote }}
+        {{- with .Values.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}

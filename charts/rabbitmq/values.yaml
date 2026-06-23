@@ -57,6 +57,23 @@ service:
   # -- Service port for AMQP connections
   port: 5672
 
+# -- Persistence settings for RabbitMQ data
+persistence:
+  # -- Storage size for the data volume
+  size: 8Gi
+  # -- Access modes for the PVC
+  accessModes:
+    - ReadWriteOnce
+  # -- Storage class name (leave empty for default)
+  storageClass: ""
+
+# -- Clustering settings for multi-node RabbitMQ
+clustering:
+  # -- Erlang cookie for node authentication. Auto-generated if empty
+  erlangCookie: ""
+  # -- Enable the management plugin port (15672)
+  managementPort: false
+
 # -- Resource requests and limits
 resources:
   limits:
