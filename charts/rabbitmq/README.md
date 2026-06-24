@@ -34,6 +34,8 @@ helm install my-rabbitmq charts/rabbitmq/
 
 ## Configuration
 
+If you render manifests with `helm template` (e.g. GitOps), set `clustering.erlangCookie` to a fixed value to avoid non-deterministic Secret output.
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `image.repository` | `string` | `docker.io/ubuntu/rabbitmq` | Container image repository |
