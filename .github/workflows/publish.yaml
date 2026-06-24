@@ -1,0 +1,59 @@
+name: Publish Helm Charts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "charts/**"
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: "Name of the chart to build and publish (e.g. rabbitmq)"
+        required: true
+        type: string
+
+jobs:
+  detect-charts:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.changed.outputs.charts }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed charts
+        id: changed
+        run: |
+          charts=$(git diff --name-only HEAD~1 -- charts/ \
+            | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "charts=$charts" >> "$GITHUB_OUTPUT"
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: detect-charts
+    if: always() && (github.event_name == 'workflow_dispatch' || needs.detect-charts.outputs.charts != '[]')
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        chart: ${{ github.event_name == 'workflow_dispatch' && fromJson(format('["{0}"]', inputs.chart)) || fromJson(needs.detect-charts.outputs.charts) }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Helm
+        run: sudo snap install helm --classic --channel=latest/stable
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Package chart ${{ matrix.chart }}
+        run: helm package charts/${{ matrix.chart }}
+
+      - name: Push chart ${{ matrix.chart }} to GHCR
+        run: |
+          pkg=$(ls ${{ matrix.chart }}-*.tgz)
+          helm push "$pkg" oci://ghcr.io/${{ github.repository }}
