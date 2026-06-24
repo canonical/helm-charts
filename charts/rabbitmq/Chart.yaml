@@ -1,0 +1,15 @@
+apiVersion: v2
+name: rabbitmq
+description: |
+  Helm chart for rabbitmq backed by the Ubuntu rock `ubuntu/rabbitmq`.
+
+  RabbitMQ is an open source multi-protocol messaging broker.
+
+  RabbitMQ is a reliable and mature messaging and streaming broker, which is
+  easy to deploy on cloud environments, on-premises, and on your local machine.
+  It is currently used by millions worldwide. This is a chiselled RabbitMQ
+  image.
+type: application
+version: 0.1.0
+appVersion: "4.0"
+home: https://ubuntu.com/containers

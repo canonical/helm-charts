@@ -1,0 +1,141 @@
+suite: test statefulset
+templates:
+  - statefulset.yaml
+tests:
+  - it: should be a StatefulSet
+    asserts:
+      - isKind:
+          of: StatefulSet
+
+  - it: should reference the headless service
+    asserts:
+      - equal:
+          path: spec.serviceName
+          value: RELEASE-NAME-rabbitmq-headless
+
+  - it: should use the correct image with digest
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/ubuntu/rabbitmq:4.0-26.04_stable@sha256:9d6a3268002b91e2c93a86726f281539cdd089a07d5fa681e506aad66b4e70d1"
+
+  - it: should use image tag only when digest is empty
+    set:
+      image.digest: ""
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/ubuntu/rabbitmq:4.0-26.04_stable"
+
+  - it: should have the expected security context
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 584792
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop[0]
+          value: ALL
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should expose AMQP port
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: amqp
+            containerPort: 5672
+            protocol: TCP
+
+  - it: should expose EPMD and distribution ports
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: epmd
+            containerPort: 4369
+            protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: dist
+            containerPort: 25672
+            protocol: TCP
+
+  - it: should have liveness probe targeting the AMQP port
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+          value: amqp
+
+  - it: should have readiness probe targeting the AMQP port
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+          value: amqp
+
+  - it: should have resource limits
+    asserts:
+      - isNotNullOrEmpty:
+          path: spec.template.spec.containers[0].resources.limits
+
+  - it: should have app.kubernetes.io/name label
+    asserts:
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+
+  - it: should respect custom replica count
+    set:
+      replicaCount: 3
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should mount data volume
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: data
+            mountPath: /var/lib/rabbitmq
+
+  - it: should have a volumeClaimTemplate for data
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: data
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: "8Gi"
+
+  - it: should set clustering env vars when replicas > 1
+    set:
+      replicaCount: 3
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_USE_LONGNAME
+            value: "true"
+
+  - it: should set erlang cookie from secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RABBITMQ_ERLANG_COOKIE
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-rabbitmq-erlang-cookie
+                key: erlang-cookie

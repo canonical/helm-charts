@@ -28,7 +28,7 @@ fi
 if ! command -v helm &> /dev/null; then
 	if [ -n "$INSTALL" ]; then
 		echo "installing helm..."
-		sudo snap install helm --classic --stable
+		sudo snap install helm --classic --channel=latest/stable
 	else
 		MISSING_TOOLS+=("helm")
 	fi
@@ -38,14 +38,20 @@ fi
 
 # helm plugins (installed only when INSTALL is set and helm is available)
 if [ -n "$INSTALL" ] && command -v helm &> /dev/null; then
+	HELM_MAJOR=$(helm version --short 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/')
+	VERIFY_FLAG=""
+	if [ "${HELM_MAJOR:-3}" -ge 4 ]; then
+		VERIFY_FLAG="--verify=false"
+	fi
+
 	if ! helm plugin list 2>/dev/null | grep -q "unittest"; then
 		echo "installing helm-unittest plugin..."
-		helm plugin install https://github.com/helm-unittest/helm-unittest --verify=false
+		helm plugin install https://github.com/helm-unittest/helm-unittest $VERIFY_FLAG
 	fi
 
 	if ! helm plugin list 2>/dev/null | grep -q "diff"; then
 		echo "installing helm-diff plugin..."
-		helm plugin install https://github.com/databus23/helm-diff --verify=false
+		helm plugin install https://github.com/databus23/helm-diff $VERIFY_FLAG
 	fi
 fi
 
@@ -65,7 +71,7 @@ fi
 if ! command -v spread &> /dev/null; then
 	if [ -n "$INSTALL" ]; then
 		echo "installing spread..."
-		go install github.com/canonical/spread@main
+		go install github.com/canonical/spread/cmd/spread@master
 	else
 		OPTIONAL_TOOLS+=("spread")
 	fi

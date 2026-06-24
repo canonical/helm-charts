@@ -138,8 +138,13 @@ If needing to adjust the security context after validating the chart, then justi
 
 ##### Pebble-wired probes
 
-When Pebble checks exist in the plan, map them to Kubernetes probes.
-When no checks are defined, use generic Pebble health defaults:
+Probes must reflect whether the **application** actually started — not merely
+whether the Pebble daemon is up. This distinction matters because `helm install --wait`
+(and the integration test) gate on the readiness probe: a probe that
+reports ready too eagerly will let a broken deployment pass as healthy.
+
+When the rock's Pebble plan defines health `checks:`, map them to Kubernetes
+probes via `[/bin/pebble, health]` — Pebble then exits non-zero if a check fails:
 ```yaml
 livenessProbe:
   exec:
@@ -153,13 +158,25 @@ readinessProbe:
   periodSeconds: 5
 ```
 
+> WARNING: If the plan defines **no** `checks:`, `pebble health` succeeds as soon
+> as the Pebble daemon is running, even while the actual service crash-loops.
+> Inspect the plan (`pebble plan` / the baked layer) and confirm checks exist
+> before using `pebble health`. When there are no checks, probe the service
+> directly instead — for a networked service, a `tcpSocket` probe on its port
+> needs no in-container tooling and only succeeds once the app binds the port:
+> ```yaml
+> readinessProbe:
+>   tcpSocket:
+>     port: <service-port-name>
+> ```
+
 ##### `LICENSE` file
 
 **IF** requested, add a `LICENSE` file in the `<chart-path>`.
 
 #### 4. Add tests
 
- - If not yet present, generate `<chart-path>/templates/tests/test-connection.yaml` with a simple test that verifies the container is running and responding to Pebble checks
+ - If not yet present, generate `<chart-path>/templates/tests/test-connection.yaml` with a test that connects to the **deployed** service and verifies the application actually started (e.g. open a TCP connection to the service's port, or perform an application-level request). Do not merely run `pebble health` in a throwaway pod — that does not exercise the deployed workload and can pass even when the app failed to start.
  - Add a `<chart-path>/task.yaml` file. This is a Spread task definition (see https://github.com/canonical/spread), and should look like this:
   
     ```yaml

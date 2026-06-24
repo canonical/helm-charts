@@ -1,0 +1,119 @@
+image:
+  # -- Container image repository
+  repository: docker.io/ubuntu/rabbitmq
+  # -- Image tag (mutable channel track)
+  tag: "4.0-26.04_stable"
+  # -- Image digest for pinning (sha256:...). Leave empty to use tag only
+  digest: "sha256:9d6a3268002b91e2c93a86726f281539cdd089a07d5fa681e506aad66b4e70d1"
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Number of replicas
+replicaCount: 1
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full resource name
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Whether to create a ServiceAccount
+  create: true
+  # -- Annotations to add to the ServiceAccount
+  annotations: {}
+  # -- Override the ServiceAccount name
+  name: ""
+
+# -- Annotations to add to the Pod
+podAnnotations: {}
+
+# -- Security context for the Pod
+podSecurityContext:
+  fsGroup: 584792
+
+# -- Security context for the rabbitmq container
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  # NOTE: This chart is an exception to the project-wide default of
+  # readOnlyRootFilesystem: true. The RabbitMQ rock runs Erlang via Pebble, and
+  # both Pebble (socket/state/identity files under /var/lib/pebble/default) and
+  # Erlang (the .erlang.cookie under the _daemon_ user's passwd HOME, which is
+  # also /var/lib/pebble/default) write to the image's root filesystem at
+  # runtime. Pebble forces HOME from the service user's passwd entry, so a
+  # container-level HOME override does not reach the service process, and the
+  # baked Pebble dir cannot be shadowed by an emptyDir without losing the layers.
+  # Until the rock relocates these writable paths to dedicated volume-friendly
+  # locations, we keep readOnlyRootFilesystem disabled for this chart.
+  # TODO: Re-enable readOnlyRootFilesystem: true once the rock supports it.
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: [ALL]
+  seccompProfile:
+    type: RuntimeDefault
+
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- Service port for AMQP connections
+  port: 5672
+
+# -- Persistence settings for RabbitMQ data
+persistence:
+  # -- Storage size for the data volume
+  size: 8Gi
+  # -- Access modes for the PVC
+  accessModes:
+    - ReadWriteOnce
+  # -- Storage class name (leave empty for default)
+  storageClass: ""
+
+# -- Clustering settings for multi-node RabbitMQ
+clustering:
+  # -- Erlang cookie for node authentication. Auto-generated if empty
+  erlangCookie: ""
+  # -- Enable the management plugin port (15672)
+  managementPort: false
+
+# -- Resource requests and limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# -- Node selector for Pod scheduling
+nodeSelector: {}
+
+# -- Tolerations for Pod scheduling
+tolerations: []
+
+# -- Affinity rules for Pod scheduling
+affinity: {}
+
+# NOTE: The probes intentionally do NOT use `pebble health`. This rock's Pebble
+# plan defines no health checks, so `pebble health` succeeds as soon as the
+# Pebble daemon is up — even while the rabbitmq-server service crash-loops. That
+# false positive previously let a broken deployment pass `helm install --wait`.
+# A tcpSocket probe on the AMQP port only succeeds once the broker actually boots
+# and binds the port, so it reflects real application readiness regardless of the
+# underlying failure.
+livenessProbe:
+  tcpSocket:
+    # -- Liveness probe target port (AMQP)
+    port: amqp
+  # -- Liveness probe initial delay in seconds
+  initialDelaySeconds: 30
+  # -- Liveness probe period in seconds
+  periodSeconds: 10
+
+readinessProbe:
+  tcpSocket:
+    # -- Readiness probe target port (AMQP)
+    port: amqp
+  # -- Readiness probe initial delay in seconds
+  initialDelaySeconds: 5
+  # -- Readiness probe period in seconds
+  periodSeconds: 5

@@ -1,0 +1,14 @@
+RabbitMQ has been deployed as a StatefulSet with {{ .Values.replicaCount }} replica(s).
+
+{{- if eq .Values.service.type "ClusterIP" }}
+Port-forward the Service and connect to amqp://localhost:{{ .Values.service.port }}:
+  kubectl port-forward svc/{{ include "rabbitmq.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+{{- else }}
+Connect to the Service {{ include "rabbitmq.fullname" . }} on port {{ .Values.service.port }} (type: {{ .Values.service.type }}).
+{{- end }}
+
+{{- if gt (int .Values.replicaCount) 1 }}
+
+Cluster peer discovery uses the headless service:
+  {{ include "rabbitmq.fullname" . }}-headless
+{{- end }}

@@ -1,0 +1,51 @@
+suite: test headless service
+templates:
+  - svc-headless.yaml
+tests:
+  - it: should be a Service
+    asserts:
+      - isKind:
+          of: Service
+
+  - it: should be headless (clusterIP None)
+    asserts:
+      - equal:
+          path: spec.clusterIP
+          value: None
+
+  - it: should publish not-ready addresses
+    asserts:
+      - equal:
+          path: spec.publishNotReadyAddresses
+          value: true
+
+  - it: should expose AMQP, EPMD, and distribution ports
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            port: 5672
+            targetPort: amqp
+            protocol: TCP
+            name: amqp
+      - contains:
+          path: spec.ports
+          content:
+            port: 4369
+            targetPort: epmd
+            protocol: TCP
+            name: epmd
+      - contains:
+          path: spec.ports
+          content:
+            port: 25672
+            targetPort: dist
+            protocol: TCP
+            name: dist
+
+  - it: should have correct selector labels
+    asserts:
+      - exists:
+          path: spec.selector["app.kubernetes.io/name"]
+      - exists:
+          path: spec.selector["app.kubernetes.io/instance"]
