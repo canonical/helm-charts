@@ -21,7 +21,9 @@ spec:
         - -noshell
         - -eval
         - >-
-          inet_db:set_lookup([dns,file]),
+          {ok, Rc} = file:read_file("/etc/resolv.conf"),
+          lists:foreach(fun(L) -> case string:tokens(L, " \t") of ["nameserver", Ip] -> case inet:parse_address(Ip) of {ok, A} -> inet_db:add_ns(A); _ -> ok end; _ -> ok end end, string:tokens(binary_to_list(Rc), "\n")),
+          inet_db:set_lookup([dns, file]),
           case gen_tcp:connect("{{ include "rabbitmq.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local", {{ .Values.service.port }}, [], 5000) of
           {ok, S} -> gen_tcp:close(S), halt(0);
           {error, R} -> io:format("AMQP connect failed: ~p~n", [R]), halt(1)

@@ -60,6 +60,7 @@ prepare: |
 
   k8s enable local-storage
   k8s enable dns
+  k8s kubectl rollout status deployment/coredns -n kube-system --timeout=120s
 
   printf '#!/bin/sh\nexec k8s kubectl "$@"\n' > /usr/local/bin/kubectl
   chmod +x /usr/local/bin/kubectl
