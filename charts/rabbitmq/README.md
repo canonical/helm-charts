@@ -49,7 +49,7 @@ If you render manifests with `helm template` (e.g. GitOps), set `clustering.erla
 | `serviceAccount.annotations` | `object` | `{}` | Annotations to add to the ServiceAccount |
 | `serviceAccount.name` | `string` | `""` | Override the ServiceAccount name |
 | `podAnnotations` | `object` | `{}` | Annotations to add to the Pod |
-| `podSecurityContext` | `object` | `{}` | Security context for the Pod |
+| `podSecurityContext` | `object` | `{"fsGroup":584792}` | Security context for the Pod |
 | `securityContext.runAsNonRoot` | `boolean` | `true` | Require running as a non-root user |
 | `securityContext.allowPrivilegeEscalation` | `boolean` | `false` | Prevent privilege escalation |
 | `securityContext.readOnlyRootFilesystem` | `boolean` | `false` | Mount root filesystem as read-only |
