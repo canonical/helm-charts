@@ -17,11 +17,9 @@ render-templates() {
 	local name
 	name="$(basename "$chart")"
 	echo "Rendering Helm templates for chart ${chart}..."
-	if command -v kubectl &> /dev/null; then
-		helm template "test-templates-${name}" "${REPO_ROOT}/${chart}" | kubectl apply --dry-run=client -f -
-	else
-		helm template "test-templates-${name}" "${REPO_ROOT}/${chart}" > /dev/null
-	fi
+	
+	helm template "test-templates-${name}" "${REPO_ROOT}/${chart}" | kubectl apply --dry-run=client -f - \
+		|| helm template "test-templates-${name}" "${REPO_ROOT}/${chart}" > /dev/null
 }
 
 # Test rendered templates against OPA policies
