@@ -27,6 +27,15 @@ fi
 helm dependency update "$chart_path"
 helm install "$chart_release" "$chart_path" \
 --wait \
---timeout 5m
+--timeout 5m || {
+  echo "=== HELM INSTALL FAILED - Collecting diagnostics ==="
+  kubectl get pods -o wide
+  kubectl describe pods
+  kubectl logs -l app.kubernetes.io/name="${chart_path##*/}" --tail=100 || true
+  kubectl logs -l app.kubernetes.io/name="${chart_path##*/}" --previous --tail=100 || true
+  kubectl get pvc
+  kubectl get events --sort-by='.lastTimestamp' | tail -40
+  exit 1
+}
 
 helm test "$chart_release" --timeout 5m --logs

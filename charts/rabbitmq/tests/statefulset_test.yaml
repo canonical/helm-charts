@@ -30,6 +30,9 @@ tests:
   - it: should have the expected security context
     asserts:
       - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 584792
+      - equal:
           path: spec.template.spec.containers[0].securityContext.runAsNonRoot
           value: true
       - equal:

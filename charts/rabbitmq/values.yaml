@@ -28,7 +28,8 @@ serviceAccount:
 podAnnotations: {}
 
 # -- Security context for the Pod
-podSecurityContext: {}
+podSecurityContext:
+  fsGroup: 584792
 
 # -- Security context for the rabbitmq container
 securityContext:
