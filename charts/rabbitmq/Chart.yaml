@@ -10,6 +10,6 @@ description: |
   It is currently used by millions worldwide. This is a chiselled RabbitMQ
   image.
 type: application
-version: 0.1.0
+version: 0.0.1
 appVersion: "4.0"
 home: https://ubuntu.com/containers
