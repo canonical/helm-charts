@@ -6,5 +6,5 @@
 .project
 .idea
 *.tmproj
-tests/
+/tests/
 task.yaml

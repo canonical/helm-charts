@@ -13,8 +13,10 @@ image.
 
 This chart deploys the following Kubernetes resources:
 
-- **Deployment** — runs the RabbitMQ server container using Pebble as the entrypoint
+- **StatefulSet** — runs the RabbitMQ server container using Pebble as the entrypoint
 - **Service** — exposes the AMQP port (5672) within the cluster
+- **Headless Service** — stable DNS identities for StatefulSet pods / peer discovery
+- **Secret** — stores the Erlang cookie shared by cluster nodes
 - **ServiceAccount** — dedicated service account for the RabbitMQ pods
 
 The container uses TCP socket probes against the AMQP port (5672) for liveness and readiness to ensure the broker actually started. A PSS-Restricted security context is applied; however `readOnlyRootFilesystem` is disabled by default because the current rock writes to the image filesystem at runtime (see `values.yaml`).
@@ -53,6 +55,11 @@ helm install my-rabbitmq charts/rabbitmq/
 | `securityContext.seccompProfile.type` | `string` | `RuntimeDefault` | Seccomp profile type |
 | `service.type` | `string` | `ClusterIP` | Service type |
 | `service.port` | `integer` | `5672` | Service port for AMQP connections |
+| `persistence.size` | `string` | `8Gi` | Storage size for the data volume |
+| `persistence.accessModes` | `list` | `[ReadWriteOnce]` | Access modes for the PVC |
+| `persistence.storageClass` | `string` | `""` | Storage class name (leave empty for default) |
+| `clustering.erlangCookie` | `string` | `""` | Erlang cookie for node authentication. Auto-generated if empty |
+| `clustering.managementPort` | `boolean` | `false` | Enable the management plugin port (15672) |
 | `resources.limits.cpu` | `string` | `500m` | CPU resource limit |
 | `resources.limits.memory` | `string` | `512Mi` | Memory resource limit |
 | `resources.requests.cpu` | `string` | `100m` | CPU resource request |

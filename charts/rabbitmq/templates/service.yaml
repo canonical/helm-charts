@@ -11,5 +11,11 @@ spec:
       targetPort: amqp
       protocol: TCP
       name: amqp
+    {{- if .Values.clustering.managementPort }}
+    - port: 15672
+      targetPort: management
+      protocol: TCP
+      name: management
+    {{- end }}
   selector:
     {{- include "rabbitmq.selectorLabels" . | nindent 4 }}
