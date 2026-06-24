@@ -21,6 +21,9 @@ Upon landing on the default branch, newly contributed Helm charts are versioned,
 ## Contributing
 We welcome contributions! Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on our code of conduct, the CLA requirement, and the process for submitting Pull Requests to us.
 
+### Requesting a new chart
+Want a Helm chart for a rock that isn't here yet? Open a [**Chart Request**](../../issues/new?template=request-new-chart.yaml) issue and provide the chart name, the rock image, and an optional upstream reference chart.
+
 ---
 
 ## Helm Crafter Agent
