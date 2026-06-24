@@ -21,7 +21,8 @@ spec:
         - -noshell
         - -eval
         - >-
-          case gen_tcp:connect("{{ include "rabbitmq.fullname" . }}", {{ .Values.service.port }}, [], 5000) of
+          inet_db:set_lookup([dns,file]),
+          case gen_tcp:connect("{{ include "rabbitmq.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local", {{ .Values.service.port }}, [], 5000) of
           {ok, S} -> gen_tcp:close(S), halt(0);
           {error, R} -> io:format("AMQP connect failed: ~p~n", [R]), halt(1)
           end.

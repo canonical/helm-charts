@@ -59,6 +59,7 @@ prepare: |
   k8s status --wait-ready --timeout 5m
 
   k8s enable local-storage
+  k8s enable dns
 
   printf '#!/bin/sh\nexec k8s kubectl "$@"\n' > /usr/local/bin/kubectl
   chmod +x /usr/local/bin/kubectl
