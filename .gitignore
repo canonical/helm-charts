@@ -11,7 +11,8 @@ specs/
 charts/**/charts/
 tessl*
 .tessl
-.agents
+.agents/*
+!.agents/skills/
 .claude
 .vscode
 .github/skills/

@@ -9,7 +9,7 @@
 ## Project layout
 
 - Charts live in `charts/<name>/` where `<name>` is user-defined or derived from the rock name.
-- Skills live in `skills/`.
+- Skills live in `.agents/skills/`.
 
 ## Helm Chart crafting instructions
 
@@ -24,7 +24,7 @@ in this repo can be either fetched directly from their source, or added with `np
 
 | Skill                   | Purpose                                          | Source                                  |
 | ----------------------- | ------------------------------------------------ | --------------------------------------- |
-| `ubuntu-helm-creator`   | Generate Helm charts backed by Ubuntu rocks      | `skills/ubuntu-helm-creator/SKILL.md`   |
-| `ubuntu-helm-validator` | Validate charts (upstream + Canonical checks)    | `skills/ubuntu-helm-validator/SKILL.md` |
-| `ubuntu-helm-docs`      | Generate/update `README.md` for a chart          | `skills/ubuntu-helm-docs/SKILL.md`      |
-| `ubuntu-helm-analyzer`  | Analyze a chart and extract ordered feature list | `skills/ubuntu-helm-analyzer/SKILL.md`  |
+| `ubuntu-helm-creator`   | Generate Helm charts backed by Ubuntu rocks      | `.agents/skills/ubuntu-helm-creator/SKILL.md`   |
+| `ubuntu-helm-validator` | Validate charts (upstream + Canonical checks)    | `.agents/skills/ubuntu-helm-validator/SKILL.md` |
+| `ubuntu-helm-docs`      | Generate/update `README.md` for a chart          | `.agents/skills/ubuntu-helm-docs/SKILL.md`      |
+| `ubuntu-helm-analyzer`  | Analyze a chart and extract ordered feature list | `.agents/skills/ubuntu-helm-analyzer/SKILL.md`  |
