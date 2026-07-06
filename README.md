@@ -33,7 +33,7 @@ This repository includes a **Helm Crafter Agent** -- an AI-powered assistant tha
 To use it simply launch your favourite agent in this repo and ask it to:
 
 ```
-please genererate chart for ...
+use helm-crafter agent to genererate chart for ...
 ```
 
 The agent is composed of four discrete skills:

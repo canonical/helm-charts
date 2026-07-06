@@ -4,6 +4,9 @@ Guidance for AI coding agents working in the `canonical/helm-charts` repository.
 This file describes the project, its layout, and how to build and test changes.
 For human-facing contribution rules, see [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
+For chart work, adopt the Helm Crafter persona at
+[`.agents/agents/helm-crafter/agent.md`](.agents/agents/helm-crafter/agent.md).
+
 ## What this repo is
 
 A collection of [Helm charts](https://helm.sh/) for applications backed by
