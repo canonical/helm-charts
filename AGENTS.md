@@ -80,3 +80,6 @@ automatically; consult the relevant one before starting a task.
 
 The underlying scripts are also exposed as `just` targets, so the same
 validation runs whether driven by an agent or a human.
+
+For a ready-made persona that drives these skills end to end, see the
+[Helm Crafter Agent](.agents/agents/helm-crafter/agent.md).
