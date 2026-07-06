@@ -18,6 +18,8 @@ published to GHCR.
   `tests/` (helm-unittest specs).
 - `.agents/skills/` -- [Agent Skills](https://agentskills.io/specification) for
   chart work, discoverable by any conforming agent (see [Skills](#skills)).
+- `.agents/agents/` -- sub-agent personas (see the
+  [Helm Crafter Agent](.agents/agents/helm-crafter/agent.md)).
 - `policy.rego` -- global OPA/conftest policy applied to rendered manifests.
 - `spread.yaml`, `spread/` -- integration-test harness (spread + LXD).
 - `justfile` -- task runner for all local build/test commands.
@@ -83,3 +85,4 @@ validation runs whether driven by an agent or a human.
 
 For a ready-made persona that drives these skills end to end, see the
 [Helm Crafter Agent](.agents/agents/helm-crafter/agent.md).
+

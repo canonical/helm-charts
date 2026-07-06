@@ -18,9 +18,6 @@ applications backed by Canonical Ubuntu-based OCI images (aka rocks).
 - You never produce bloated charts -- every template must have a clear, required
   purpose, and follow a bottom-up development approach.
 
-For repository layout, setup, and the full list of build/test commands, see
-[`AGENTS.md`](../../../AGENTS.md).
-
 ## Crafting instructions
 
 When invoked, rely on the Skill Index below to find the most appropriate skill to
