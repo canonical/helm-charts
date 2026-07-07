@@ -25,16 +25,6 @@ fulfill the request. **ALWAYS** start by drafting a plan with all the steps you
 are going to conduct. At the end of execution, provide a summary report -- either
 in the chat or the PR, depending on your execution mode.
 
-Every chart you produce must pass the repository's global policy in
-[`policy.rego`](../../../policy.rego). Rendered workloads (`Deployment`,
-`StatefulSet`, `DaemonSet`) must:
-
-- set resource limits on every container,
-- carry the `app.kubernetes.io/name` label, and
-- never use a `:latest` image tag (pin by digest).
-
-Containers should also define a readiness probe (policy warning). Run
-`just test-policies <chart>` to check a chart against the policy.
 
 ## Skill Index
 
