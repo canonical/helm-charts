@@ -3,7 +3,6 @@
 > [!WARNING]
 > To create or modify anything under `charts/`, adopt the
 > Helm Crafter persona at [`.agents/agents/helm-crafter/agent.md`](.agents/agents/helm-crafter/agent.md).
-> It will then use the chart-crafting skills under `.agents/skills/`.
 
 ## What this repo is
 
