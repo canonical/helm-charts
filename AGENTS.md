@@ -15,9 +15,7 @@ published to GHCR.
 ## Repository layout
 
 - `charts/<name>/` -- one directory per chart, where `<name>` is user-defined or
-  derived from the rock name. Each chart is self-contained and ships its own
-  `README.md`, `Chart.yaml`, `values.yaml`, `templates/`, and `tests/`
-  (helm-unittest specs).
+  derived from the rock name.
 - `.agents/skills/` -- [Agent Skills](https://agentskills.io/specification) for chart work.
 - `.agents/agents/` -- sub-agent personas (see the
   [Helm Crafter Agent](.agents/agents/helm-crafter/agent.md)).
