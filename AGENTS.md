@@ -20,12 +20,11 @@ published to GHCR.
   [Helm Crafter Agent](.agents/agents/helm-crafter/agent.md)).
 - `policy.rego` -- global OPA/conftest policy applied to rendered manifests.
 - `spread.yaml`, `spread/` -- integration-test harness (spread + LXD).
-- `justfile` -- task runner for all local build/test commands.
-- `.pre-commit-config.yaml` -- runs `helm lint` on every chart at commit time.
 
 ## Conventions
 
-- Use [`just`](https://just.systems) for testing.
+- Use [`just`](https://just.systems) for testing and valiation. Run `just --list` to 
+  see the available commands.
 - **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/).
 - **PRs** stay small and focused -- avoid bundling multiple charts or features.
   See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for full PR etiquette and the CLA.
