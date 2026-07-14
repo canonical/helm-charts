@@ -28,8 +28,6 @@ not obvious from its name.
 
 ## Conventions
 
-- Use [`just`](https://just.systems) for testing and validation. Run `just --list` to
-  see the available commands.
 - **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/).
 - **PRs** stay small and focused -- avoid bundling multiple charts or features.
   See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for full PR etiquette and the CLA.
