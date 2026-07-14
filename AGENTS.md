@@ -1,30 +1,33 @@
-# Helm Crafter Agent
+# AGENTS.md
 
-**Your role**: you are the **Helm Crafter Agent** — an agent that generates, validates, tests, documents, and maintains Kubernetes Helm charts for applications backed by Canonical Ubuntu-based OCI images (aka rocks).
+> [!WARNING]
+> To create or modify anything under `charts/`, adopt the
+> Helm Crafter persona at [`.agents/agents/helm-crafter/agent.md`](.agents/agents/helm-crafter/agent.md).
 
-- You always design the Helm Charts to use rocks
-- You are equipped with discrete, composable **skills** (see Skill Index below)
-- You never produce bloated charts — every template must have a clear, required purpose, and follow a bottom-up development approach
+## What this repo is
 
-## Project layout
+A collection of [Helm charts](https://helm.sh/) for applications backed by
+[Ubuntu rocks](https://ubuntu.com/containers/docs) (Canonical Ubuntu-based OCI
+images). Charts landing on the default branch are versioned, packaged, and
+published to GHCR.
 
-- Charts live in `charts/<name>/` where `<name>` is user-defined or derived from the rock name.
-- Skills live in `.agents/skills/`.
+## Repository layout
 
-## Helm Chart crafting instructions
+Not exhaustive -- only the paths relevant to chart work, each with what is
+not obvious from its name.
 
-When invoked, rely on the Skill Index below to find the most appropriate skill to fulfill the request.
-It is important to **ALWAYS** start by drafting a plan with all the steps that you are going to conduct.
-At the end of execution, you should provide a summary report, either in the chat or the PR, depending on your execution mode.
+- `charts/<name>/` -- one directory per chart, where `<name>` is user-defined or
+  derived from the rock name.
+- `.agents/skills/` -- [Agent Skills](https://agentskills.io/specification) for chart work.
+- `.agents/agents/` -- sub-agent personas (see the
+  [Helm Crafter Agent](.agents/agents/helm-crafter/agent.md)).
+- `policy.rego` -- global OPA/conftest policy applied to rendered manifests.
+- `spread.yaml`, `spread/` -- integration-test harness
+  ([spread](https://github.com/canonical/spread) + LXD).
+- `.github/workflows/` -- CI and chart publishing to GHCR.
 
-## Skill Index
+## Conventions
 
-Each one of these skills is available to be used at your disposal. Skills that are not available
-in this repo can be either fetched directly from their source, or added with `npx`.
-
-| Skill                   | Purpose                                          | Source                                  |
-| ----------------------- | ------------------------------------------------ | --------------------------------------- |
-| `ubuntu-helm-creator`   | Generate Helm charts backed by Ubuntu rocks      | `.agents/skills/ubuntu-helm-creator/SKILL.md`   |
-| `ubuntu-helm-validator` | Validate charts (upstream + Canonical checks)    | `.agents/skills/ubuntu-helm-validator/SKILL.md` |
-| `ubuntu-helm-docs`      | Generate/update `README.md` for a chart          | `.agents/skills/ubuntu-helm-docs/SKILL.md`      |
-| `ubuntu-helm-analyzer`  | Analyze a chart and extract ordered feature list | `.agents/skills/ubuntu-helm-analyzer/SKILL.md`  |
+- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/).
+- **PRs** stay small and focused -- avoid bundling multiple charts or features.
+  See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for full PR etiquette and the CLA.

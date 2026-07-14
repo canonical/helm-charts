@@ -13,6 +13,7 @@ tessl*
 .tessl
 .agents/*
 !.agents/skills/
+!.agents/agents/
 .claude
 .vscode
 .github/skills/

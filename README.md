@@ -26,9 +26,15 @@ Want a Helm chart for a rock that isn't here yet? Open a [**Chart Request**](../
 
 ---
 
-## Helm Crafter Agent
+## Working with AI agents
 
-This repository includes a **Helm Crafter Agent** — an AI-powered assistant that generates, validates, documents, and maintains Helm charts for applications backed by Ubuntu rocks.
+This repository includes a **Helm Crafter Agent** -- an AI-powered assistant that generates, validates, tests, documents, and maintains Helm charts for applications backed by Ubuntu rocks.
+
+To use it simply launch your favourite agent in this repo and ask it to:
+
+```
+use helm-crafter agent to generate chart for ...
+```
 
 The agent is composed of four discrete skills:
 
@@ -38,5 +44,3 @@ The agent is composed of four discrete skills:
 | `ubuntu-helm-validator` | Validate charts (upstream + Canonical checks) |
 | `ubuntu-helm-docs` | Generate/update `README.md` for a chart |
 | `ubuntu-helm-analyzer` | Analyze a chart and extract ordered feature list |
-
-See [`AGENTS.md`](./AGENTS.md) for the full agent specification and workflows.
